@@ -90,10 +90,21 @@ class ApiClient {
    */
   setApiKey(apiKey: string): void {
     this.instance.defaults.headers.common['Authorization'] = `Bearer ${apiKey}`;
+    
+    // Determine if we can persist storage long-term
+    const canPersist = navigator.storage && typeof navigator.storage.persist === 'function';
+    
     storageService.set('apiKey', apiKey, { 
-      // Never expire the API key, but don't store it if user is in incognito mode
-      expiry: navigator.storage && navigator.storage.persist ? 0 : 24 * 60 * 60 * 1000 // 24 hours if can't persist
+      // Never expire the API key if we can persist storage, otherwise 24 hours
+      expiry: canPersist ? 0 : 24 * 60 * 60 * 1000
     });
+    
+    // Try to persist storage if possible
+    if (canPersist) {
+      navigator.storage.persist().catch(() => {
+        // If persistence fails, silently continue
+      });
+    }
   }
 
   /**
