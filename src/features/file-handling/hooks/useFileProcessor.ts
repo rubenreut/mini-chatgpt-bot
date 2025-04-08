@@ -44,7 +44,11 @@ export const useFileProcessor = (options: FileProcessorOptions = {}) => {
     
     const preview = await createFilePreview(file);
     
+    // Generate a unique ID for the file
+    const id = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     return {
+      id,
       file,
       preview,
       name: file.name,

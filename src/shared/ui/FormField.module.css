@@ -1,0 +1,4 @@
+.container {
+  margin-bottom: var(--spacing-md);
+  width: 100%;
+}

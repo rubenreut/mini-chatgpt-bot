@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import styles from './VoiceInput.module.css';
 
 interface VoiceInputProps {
   onTranscript: (text: string) => void;
@@ -6,39 +7,7 @@ interface VoiceInputProps {
   setIsListening: (value: boolean) => void;
 }
 
-// Add missing types from browser API
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionError extends Event {
-  error: string;
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionError) => void;
-  onend: () => void;
-}
-
-interface SpeechRecognitionConstructor {
-  new (): SpeechRecognition;
-}
-
-// Declare global to make TypeScript happy
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
-  }
-}
+// Import types from globals.d.ts automatically
 
 const VoiceInput: React.FC<VoiceInputProps> = ({ 
   onTranscript, 
@@ -71,7 +40,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
           onTranscript(currentTranscript);
         };
         
-        recognitionInstance.onerror = (event: SpeechRecognitionError) => {
+        recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.error('Speech recognition error', event.error);
           setError(`Error: ${event.error}`);
           setIsListening(false);
@@ -121,16 +90,23 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening, recognition]);
 
+  // Create button className
+  const buttonClasses = [
+    styles.voiceInputButton,
+    isListening ? styles.listening : '',
+    error ? styles.error : ''
+  ].filter(Boolean).join(' ');
+
   return (
     <button 
-      className={`voice-input-button ${isListening ? 'listening' : ''} ${error ? 'error' : ''}`}
+      className={buttonClasses}
       onClick={() => setIsListening(!isListening)}
       title={error || (isListening ? 'Stop listening' : 'Start voice input')}
       disabled={!!error}
       aria-label={isListening ? 'Stop voice recording' : 'Start voice recording'}
     >
       {isListening ? (
-        <span className="listening-indicator">🎤</span>
+        <span className={styles.listeningIndicator}>🎤</span>
       ) : (
         <span role="img" aria-hidden="true">🎤</span>
       )}

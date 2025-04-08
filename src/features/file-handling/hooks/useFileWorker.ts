@@ -71,8 +71,12 @@ export const useFileWorker = (options: FileWorkerOptions = {}) => {
         const originalFile = fileMapRef.current.get(fileId);
         
         if (originalFile) {
+          // Generate a unique ID for the file
+          const id = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          
           // Add processed file to results
           setProcessedFiles(prev => [...prev, {
+            id,
             file: originalFile,
             preview: result.preview,
             name: result.file.name,

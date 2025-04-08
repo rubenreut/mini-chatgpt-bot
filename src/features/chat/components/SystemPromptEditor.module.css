@@ -1,0 +1,122 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--overlay-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.editor {
+  background-color: var(--primary-bg);
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 600px;
+  border: 1px solid var(--border-color);
+}
+
+.title {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.description {
+  color: var(--muted-text);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.textarea {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: inherit;
+  resize: vertical;
+  background-color: var(--assistant-message-bg);
+  color: var(--text-color);
+  min-height: 120px;
+  margin-bottom: 16px;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--user-message-bg);
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.3);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancelButton {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.cancelButton:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.saveButton {
+  padding: 8px 16px;
+  background-color: var(--primary-button);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.saveButton:hover {
+  background-color: var(--primary-button-hover);
+}
+
+.saveButton:disabled {
+  background-color: var(--primary-button-disabled);
+  cursor: not-allowed;
+}
+
+.tips {
+  margin-top: 24px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.tips h3 {
+  font-size: 1rem;
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.tips ul {
+  margin: 0;
+  padding-left: 24px;
+  color: var(--muted-text);
+  font-size: 0.9rem;
+}
+
+.tips li {
+  margin-bottom: 4px;
+}

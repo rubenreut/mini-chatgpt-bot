@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import Message from './Message';
 import { Message as MessageType } from '../../../shared/types';
+import styles from './MessageList.module.css';
 
 interface MessageListProps {
   messages: MessageType[];
@@ -131,10 +132,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isStreaming = false
         isStreaming={isStreaming}
       />
     );
-  }, [filteredMessages, setMessageSize, isStreaming]);
+  }, [filteredMessages, setMessageSize, isStreaming, MessageItemComponent]);
   
   return (
-    <div className="messages-container" ref={containerRef}>
+    <div className={styles.messagesContainer} ref={containerRef}>
       {filteredMessages.length > 0 ? (
         <List
           ref={listRef}
@@ -143,11 +144,12 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isStreaming = false
           itemCount={filteredMessages.length}
           itemSize={getItemSize}
           overscanCount={3}
+          className={styles.messageList}
         >
           {MessageItem}
         </List>
       ) : (
-        <div className="empty-messages">Start a conversation by typing a message below.</div>
+        <div className={styles.emptyMessages}>Start a conversation by typing a message below.</div>
       )}
       <div ref={messagesEndRef} />
     </div>

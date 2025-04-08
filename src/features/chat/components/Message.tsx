@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Prism from 'prismjs';
 import { Message as MessageType } from '../../../shared/types';
-import './Message.css';
+import styles from './Message.module.css';
+import { Components } from 'react-markdown';
 
 interface MessageProps {
   message: MessageType;
@@ -12,7 +13,7 @@ interface MessageProps {
 
 // Define correct types for ReactMarkdown components
 interface CodeProps {
-  node?: any;
+  node?: unknown;
   inline?: boolean;
   className?: string;
   children?: React.ReactNode;
@@ -29,27 +30,30 @@ const Message: React.FC<MessageProps> = ({ message, isStreaming = false }) => {
   }, [message.content, message.role]);
 
   const renderContent = (content: string) => {
+    // Define custom components for react-markdown
+    const components: Components = {
+      code: ({ inline, className, children, ...props }: CodeProps) => {
+        const match = /language-(\w+)/.exec(className || '');
+        return !inline && match ? (
+          <pre className={`language-${match[1]}`}>
+            <code className={`language-${match[1]}`} {...props}>
+              {children}
+            </code>
+          </pre>
+        ) : (
+          <code className={className} {...props}>
+            {children}
+          </code>
+        );
+      }
+    };
+    
     return (
       <div ref={codeRef}>
         <ReactMarkdown
-          className="markdown-content"
+          className={styles.markdownContent}
           remarkPlugins={[remarkGfm]}
-          components={{
-            code: ({ node, inline, className, children, ...props }: CodeProps) => {
-              const match = /language-(\w+)/.exec(className || '');
-              return !inline && match ? (
-                <pre className={`language-${match[1]}`}>
-                  <code className={`language-${match[1]}`} {...props}>
-                    {children}
-                  </code>
-                </pre>
-              ) : (
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              );
-            }
-          }}
+          components={components}
         >
           {content}
         </ReactMarkdown>
@@ -59,19 +63,25 @@ const Message: React.FC<MessageProps> = ({ message, isStreaming = false }) => {
 
   // Create a typing indicator component
   const TypingIndicator = () => (
-    <div className="typing-indicator">
+    <div className={styles.typingIndicator}>
       <span></span>
       <span></span>
       <span></span>
     </div>
   );
 
+  // Build className conditionally
+  const messageClasses = [
+    styles.message,
+    message.role === 'user' ? styles.userMessage : styles.assistantMessage,
+    message.error ? styles.errorMessage : '',
+    isStreaming ? styles.streaming : ''
+  ].filter(Boolean).join(' ');
+
   return (
-    <div 
-      className={`message ${message.role === 'user' ? 'user-message' : 'assistant-message'} ${message.error ? 'error-message' : ''} ${isStreaming ? 'streaming' : ''}`}
-    >
-      <div className="message-role">{message.role === 'user' ? 'You' : 'Assistant'}</div>
-      <div className="message-content">
+    <div className={messageClasses}>
+      <div className={styles.messageRole}>{message.role === 'user' ? 'You' : 'Assistant'}</div>
+      <div className={styles.messageContent}>
         {message.role === 'user' ? 
           message.content : 
           (message.content.length === 0 && isStreaming ? 
@@ -79,7 +89,7 @@ const Message: React.FC<MessageProps> = ({ message, isStreaming = false }) => {
             renderContent(message.content))
         }
         {message.error && (
-          <div className="message-error">
+          <div className={styles.messageError}>
             {message.errorType === 'auth' 
               ? 'API key error. Please check your OpenAI API key.' 
               : message.errorType === 'no_api_key'

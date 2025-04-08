@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, FormEvent } from 'react';
+import styles from './ConversationTitle.module.css';
 
 interface ConversationTitleProps {
   title: string | null;
@@ -49,13 +50,13 @@ const ConversationTitle = ({
   };
 
   return (
-    <div className="conversation-title-container">
+    <div className={styles.container}>
       {isEditing ? (
-        <form onSubmit={handleSubmit} className="title-edit-form">
+        <form onSubmit={handleSubmit} className={styles.editForm}>
           <input
             ref={inputRef}
             type="text"
-            className="title-edit-input"
+            className={styles.editInput}
             value={editedTitle}
             onChange={handleInputChange}
             placeholder="Conversation title"
@@ -63,17 +64,17 @@ const ConversationTitle = ({
           />
         </form>
       ) : (
-        <div className="title-display">
-          <h2 className="title-text" onClick={handleEditStart} title="Click to edit">
+        <div className={styles.titleDisplay}>
+          <h2 className={styles.titleText} onClick={handleEditStart} title="Click to edit">
             {title || 'New Conversation'}
           </h2>
           <button 
-            className="new-conversation-button" 
+            className={styles.newButton} 
             onClick={handleNewConversation}
             title="Start a new conversation"
             aria-label="Start a new conversation"
           >
-            <span className="plus-icon">+</span> New Chat
+            <span className={styles.plusIcon}>+</span> New Chat
           </button>
         </div>
       )}

@@ -3,10 +3,18 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Prism from 'prismjs';
 import { Message as MessageType } from '../shared/types';
-import { ReactMarkdownOptions } from 'react-markdown/lib/react-markdown';
+import { Components } from 'react-markdown';
 
 interface MessageProps {
   message: MessageType;
+}
+
+// Define custom code component props with optional children
+interface CodeProps {
+  node?: unknown;
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 const Message: React.FC<MessageProps> = ({ message }) => {
@@ -20,27 +28,30 @@ const Message: React.FC<MessageProps> = ({ message }) => {
   }, [message.content, message.role]);
 
   const renderContent = (content: string) => {
+    // Define custom components for react-markdown
+    const components: Components = {
+      code: ({ inline, className, children, ...props }: CodeProps) => {
+        const match = /language-(\w+)/.exec(className || '');
+        return !inline && match ? (
+          <pre className={`language-${match[1]}`}>
+            <code className={`language-${match[1]}`} {...props}>
+              {children}
+            </code>
+          </pre>
+        ) : (
+          <code className={className} {...props}>
+            {children}
+          </code>
+        );
+      }
+    };
+
     return (
       <div ref={codeRef}>
         <ReactMarkdown
           className="markdown-content"
           remarkPlugins={[remarkGfm]}
-          components={{
-            code({ node, inline, className, children, ...props }) {
-              const match = /language-(\w+)/.exec(className || "");
-              return !inline && match ? (
-                <pre className={`language-${match[1]}`}>
-                  <code className={`language-${match[1]}`} {...props}>
-                    {children}
-                  </code>
-                </pre>
-              ) : (
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              );
-            }
-          }}
+          components={components}
         >
           {content}
         </ReactMarkdown>

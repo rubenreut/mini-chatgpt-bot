@@ -1,0 +1,18 @@
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-index-toast);
+  padding: var(--spacing-sm);
+  animation: slideDown 0.3s var(--easing-standard);
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

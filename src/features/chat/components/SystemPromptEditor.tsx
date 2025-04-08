@@ -1,4 +1,5 @@
 import React, { useState, FormEvent } from 'react';
+import styles from './SystemPromptEditor.module.css';
 
 interface SystemPromptEditorProps {
   systemPrompt: string;
@@ -25,39 +26,39 @@ const SystemPromptEditor = ({
   };
 
   return (
-    <div className="system-prompt-editor-overlay">
-      <div className="system-prompt-editor">
-        <h2 className="prompt-editor-title">Edit System Prompt</h2>
-        <p className="prompt-editor-description">
+    <div className={styles.overlay}>
+      <div className={styles.editor}>
+        <h2 className={styles.title}>Edit System Prompt</h2>
+        <p className={styles.description}>
           The system prompt sets the behavior and capabilities of the assistant.
         </p>
-        <form onSubmit={handleSubmit} className="prompt-editor-form">
+        <form onSubmit={handleSubmit} className={styles.form}>
           <textarea
-            className="prompt-editor-textarea"
+            className={styles.textarea}
             value={editedPrompt}
             onChange={handlePromptChange}
             rows={8}
             placeholder="You are a helpful assistant..."
             autoFocus
           />
-          <div className="prompt-editor-actions">
+          <div className={styles.actions}>
             <button 
               type="button" 
-              className="prompt-editor-cancel" 
+              className={styles.cancelButton} 
               onClick={handleCancel}
             >
               Cancel
             </button>
             <button 
               type="submit" 
-              className="prompt-editor-save"
+              className={styles.saveButton}
               disabled={!editedPrompt.trim()}
             >
               Save Changes
             </button>
           </div>
         </form>
-        <div className="prompt-editor-tips">
+        <div className={styles.tips}>
           <h3>Tips:</h3>
           <ul>
             <li>Be specific about the assistant's role (e.g., "You are a helpful programming assistant")</li>

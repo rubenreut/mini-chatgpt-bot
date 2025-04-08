@@ -1,5 +1,6 @@
 import React from 'react';
 import VoiceInput from '../../../components/VoiceInput';
+import styles from './ToolbarControls.module.css';
 
 interface ToolbarControlsProps {
   onSystemPromptClick: () => void;
@@ -18,16 +19,22 @@ const ToolbarControls: React.FC<ToolbarControlsProps> = ({
   setIsListening,
   onVoiceTranscript
 }) => {
+  // Build voice toggle button classNames
+  const voiceToggleClasses = [
+    styles.toolbarButton,
+    voiceEnabled ? styles.active : ''
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className="input-toolbar">
+    <div className={styles.inputToolbar}>
       <button 
         onClick={onSystemPromptClick}
-        className="toolbar-button system-prompt-button"
+        className={styles.toolbarButton}
         title="Edit system prompt"
         aria-label="Edit system prompt"
       >
         <span role="img" aria-hidden="true">⚙️</span>
-        <span className="button-label">System Prompt</span>
+        <span className={styles.buttonLabel}>System Prompt</span>
       </button>
       
       {voiceEnabled && (
@@ -40,12 +47,12 @@ const ToolbarControls: React.FC<ToolbarControlsProps> = ({
       
       <button 
         onClick={toggleVoiceFeatures}
-        className={`toolbar-button voice-toggle ${voiceEnabled ? 'active' : ''}`}
+        className={voiceToggleClasses}
         title={`${voiceEnabled ? 'Disable' : 'Enable'} voice features`}
         aria-label={`${voiceEnabled ? 'Disable' : 'Enable'} voice features`}
       >
         <span role="img" aria-hidden="true">{voiceEnabled ? '🔊' : '🔈'}</span>
-        <span className="button-label">{voiceEnabled ? 'Voice On' : 'Voice Off'}</span>
+        <span className={styles.buttonLabel}>{voiceEnabled ? 'Voice On' : 'Voice Off'}</span>
       </button>
     </div>
   );

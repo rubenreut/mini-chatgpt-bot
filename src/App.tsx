@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import "./App.css";
 
 // Import Prism for code highlighting
@@ -12,14 +12,18 @@ import "prismjs/components/prism-json";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-sql";
 
-// Import components from feature folders
-import MessageList from "./features/chat/components/MessageList";
-import ChatInput from "./features/chat/components/ChatInput";
+// Import essential components immediately
 import Header from "./features/core/components/Header";
-import SystemPromptEditor from "./features/chat/components/SystemPromptEditor";
-import ConversationTitle from "./features/conversation/components/ConversationTitle";
-import ConversationList from "./features/conversation/components/ConversationList";
 import ErrorBoundary from "./utils/ErrorBoundary";
+import LoadingSpinner from "./components/LoadingSpinner";
+import NetworkStatus from "./shared/components/NetworkStatus";
+
+// Lazily load non-critical components
+const MessageList = lazy(() => import("./features/chat/components/MessageList"));
+const ChatInput = lazy(() => import("./features/chat/components/ChatInput"));
+const SystemPromptEditor = lazy(() => import("./features/chat/components/SystemPromptEditor"));
+const ConversationTitle = lazy(() => import("./features/conversation/components/ConversationTitle"));
+const ConversationList = lazy(() => import("./features/conversation/components/ConversationList"));
 
 // Import context hooks
 import { useChatContext } from "./features/chat/context/ChatContext";
@@ -71,6 +75,9 @@ const App = (): React.ReactNode => {
 
   return (
     <div className={`app-container ${showConversationList ? 'with-sidebar' : ''}`}>
+      {/* Network Status Banner */}
+      <NetworkStatus />
+      
       {showConversationList && (
         <ErrorBoundary 
           fallback={
@@ -99,12 +106,14 @@ const App = (): React.ReactNode => {
             >
               <span className="plus-icon">+</span> New Chat
             </button>
-            <ConversationList 
-              conversations={conversations}
-              activeId={activeConversationId}
-              handleSelect={handleConversationSelect}
-              handleDelete={deleteConversation}
-            />
+            <Suspense fallback={<LoadingSpinner text="Loading conversations..." />}>
+              <ConversationList 
+                conversations={conversations}
+                activeId={activeConversationId}
+                handleSelect={handleConversationSelect}
+                handleDelete={deleteConversation}
+              />
+            </Suspense>
           </aside>
         </ErrorBoundary>
       )}
@@ -124,11 +133,13 @@ const App = (): React.ReactNode => {
         </ErrorBoundary>
         
         <ErrorBoundary>
-          <ConversationTitle 
-            title={conversationTitle}
-            handleTitleChange={updateConversationTitle}
-            handleNewConversation={createNewConversation}
-          />
+          <Suspense fallback={<LoadingSpinner text="Loading conversation title..." />}>
+            <ConversationTitle 
+              title={conversationTitle}
+              handleTitleChange={updateConversationTitle}
+              handleNewConversation={createNewConversation}
+            />
+          </Suspense>
         </ErrorBoundary>
         
         <ErrorBoundary 
@@ -140,23 +151,29 @@ const App = (): React.ReactNode => {
             </div>
           )}
         >
-          <MessageList messages={messages} />
+          <Suspense fallback={<LoadingSpinner text="Loading messages..." />}>
+            <MessageList messages={messages} />
+          </Suspense>
         </ErrorBoundary>
         
         <ErrorBoundary>
-          <ChatInput 
-            handleSendMessage={sendMessage} 
-            isLoading={loading} 
-          />
+          <Suspense fallback={<LoadingSpinner text="Loading chat input..." />}>
+            <ChatInput 
+              handleSendMessage={sendMessage} 
+              isLoading={loading} 
+            />
+          </Suspense>
         </ErrorBoundary>
         
         {showSystemPromptEditor && (
           <ErrorBoundary>
-            <SystemPromptEditor 
-              systemPrompt={systemPrompt}
-              handleSave={updateSystemPrompt}
-              handleCancel={() => setShowSystemPromptEditor(false)}
-            />
+            <Suspense fallback={<LoadingSpinner text="Loading system prompt editor..." />}>
+              <SystemPromptEditor 
+                systemPrompt={systemPrompt}
+                handleSave={updateSystemPrompt}
+                handleCancel={() => setShowSystemPromptEditor(false)}
+              />
+            </Suspense>
           </ErrorBoundary>
         )}
       </div>

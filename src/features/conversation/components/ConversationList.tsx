@@ -1,5 +1,6 @@
 import React from 'react';
 import { Conversation } from '../../../shared/types';
+import styles from './ConversationList.module.css';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -24,34 +25,42 @@ const ConversationList = ({
   };
   
   return (
-    <div className="conversation-list">
-      <h2 className="conversation-list-title">Saved Conversations</h2>
-      <ul className="conversation-items">
-        {conversations.map((convo) => (
-          <li 
-            key={convo.id} 
-            className={`conversation-item ${convo.id === activeId ? 'active' : ''}`}
-          >
-            <button 
-              className="conversation-select-button" 
-              onClick={() => handleSelect(convo.id)}
-              aria-current={convo.id === activeId ? 'true' : 'false'}
+    <div className={styles.container}>
+      <h2 className={styles.title}>Saved Conversations</h2>
+      <ul className={styles.items}>
+        {conversations.map((convo) => {
+          // Create item classes conditionally
+          const itemClasses = [
+            styles.item,
+            convo.id === activeId ? styles.active : ''
+          ].filter(Boolean).join(' ');
+
+          return (
+            <li 
+              key={convo.id} 
+              className={itemClasses}
             >
-              <span className="conversation-title-preview">{convo.title || 'Untitled Conversation'}</span>
-              <span className="conversation-date">
-                {convo.lastUpdated ? new Date(convo.lastUpdated).toLocaleDateString() : 'N/A'}
-              </span>
-            </button>
-            <button 
-              className="conversation-delete-button" 
-              onClick={(e) => handleDeleteClick(e, convo.id)}
-              title="Delete conversation"
-              aria-label={`Delete conversation: ${convo.title || 'Untitled'}`}
-            >
-              ×
-            </button>
-          </li>
-        ))}
+              <button 
+                className={styles.selectButton} 
+                onClick={() => handleSelect(convo.id)}
+                aria-current={convo.id === activeId ? 'true' : 'false'}
+              >
+                <span className={styles.titlePreview}>{convo.title || 'Untitled Conversation'}</span>
+                <span className={styles.date}>
+                  {convo.lastUpdated ? new Date(convo.lastUpdated).toLocaleDateString() : 'N/A'}
+                </span>
+              </button>
+              <button 
+                className={styles.deleteButton} 
+                onClick={(e) => handleDeleteClick(e, convo.id)}
+                title="Delete conversation"
+                aria-label={`Delete conversation: ${convo.title || 'Untitled'}`}
+              >
+                ×
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

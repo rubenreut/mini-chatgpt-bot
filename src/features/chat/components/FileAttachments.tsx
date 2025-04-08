@@ -1,6 +1,7 @@
 import React from 'react';
 import { FiX } from 'react-icons/fi';
 import { FileWithPreview } from '../../../shared/types';
+import styles from './FileAttachments.module.css';
 
 interface FileAttachmentsProps {
   files: FileWithPreview[];
@@ -16,17 +17,17 @@ const FileAttachments: React.FC<FileAttachmentsProps> = ({
   if (files.length === 0) return null;
 
   return (
-    <div className="files-summary">
-      <div className="file-attachments">
+    <div className={styles.filesSummary}>
+      <div className={styles.fileAttachments}>
         {files.map((file) => (
-          <div className="file-attachment" key={file.id}>
-            <div className="file-attachment-header">
-              <div className="file-attachment-name" title={file.name}>
+          <div className={styles.fileAttachment} key={file.id}>
+            <div className={styles.fileAttachmentHeader}>
+              <div className={styles.fileAttachmentName} title={file.name}>
                 {file.name}
               </div>
             </div>
-            <div className="file-attachment-content">
-              <div className="file-attachment-icon">
+            <div className={styles.fileAttachmentContent}>
+              <div className={styles.fileAttachmentIcon}>
                 {file.type && file.type.startsWith('image/') ? (
                   '🖼️'
                 ) : file.type && file.type.includes('pdf') ? (
@@ -42,18 +43,18 @@ const FileAttachments: React.FC<FileAttachmentsProps> = ({
                 )}
               </div>
             </div>
-            <div className="file-attachment-details">
-              <div className="file-attachment-type">
+            <div className={styles.fileAttachmentDetails}>
+              <div className={styles.fileAttachmentType}>
                 {file.name.includes('.') ? 
                   `.${file.name.split('.').pop()}` : 
                   (file.type ? `.${file.type.split('/')[1]}` : '')}
               </div>
-              <div className="file-attachment-size">
+              <div className={styles.fileAttachmentSize}>
                 {Math.round(file.size / 1024)} KB
               </div>
             </div>
             <button 
-              className="file-attachment-remove"
+              className={styles.fileAttachmentRemove}
               onClick={() => onRemoveFile(file.id)}
               aria-label="Remove file"
             >
@@ -63,7 +64,7 @@ const FileAttachments: React.FC<FileAttachmentsProps> = ({
         ))}
       </div>
       
-      <button className="clear-attachments" onClick={onClearAll}>
+      <button className={styles.clearAttachments} onClick={onClearAll}>
         <span>×</span> Clear all attachments
       </button>
     </div>

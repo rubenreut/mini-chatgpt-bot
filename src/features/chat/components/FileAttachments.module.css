@@ -1,0 +1,140 @@
+.filesSummary {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--muted-text);
+}
+
+.fileAttachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.fileAttachment {
+  width: 150px;
+  height: 120px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--secondary-bg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.fileAttachment:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-button);
+}
+
+.fileAttachmentHeader {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--assistant-message-bg);
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.fileAttachmentName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+  margin: 0 auto;
+}
+
+.fileAttachmentContent {
+  flex: 1;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.fileAttachmentIcon {
+  color: var(--primary-button);
+  font-size: 2.2rem;
+  opacity: 0.8;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fileAttachmentDetails {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background-color: var(--assistant-message-bg);
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  color: var(--muted-text);
+}
+
+.fileAttachmentType {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--primary-button);
+  opacity: 0.9;
+  font-family: monospace;
+}
+
+.fileAttachmentSize {
+  font-size: 0.75rem;
+  color: var(--muted-text);
+}
+
+.fileAttachmentRemove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--error-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
+
+.fileAttachment:hover .fileAttachmentRemove {
+  opacity: 1;
+}
+
+.fileAttachmentRemove:hover {
+  background-color: #e43c3c;
+}
+
+.clearAttachments {
+  background: none;
+  border: none;
+  color: var(--error-color);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.clearAttachments:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}

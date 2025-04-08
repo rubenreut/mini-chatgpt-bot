@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import styles from './MessageComposer.module.css';
 
 interface MessageComposerProps {
   userInput: string;
@@ -47,7 +48,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
   return (
     <textarea
       ref={textareaRef}
-      className="message-input"
+      className={styles.messageInput}
       value={userInput}
       onChange={(e) => setUserInput(e.target.value)}
       onKeyDown={handleKeyDown}

@@ -58,6 +58,15 @@ Enhanced error boundary implementation:
 - Added proper typing for chat-related interfaces (Message, Conversation, etc.)
 - Used more precise React types (`React.FC`, `useCallback`, etc.)
 - Added appropriate typings for all utility functions
+- Improved ErrorBoundary component with proper TypeScript interfaces
+- Fixed ReactMarkdown component types
+- Added proper typing for the SpeechRecognition API
+- Updated FileWithPreview interface with required properties
+- Fixed useCallback dependency arrays for better memoization
+- Resolved all TypeScript type errors with proper typings
+- Added unique ID generation for file handling
+- Fixed type compatibility issues with React components
+- Properly typed external libraries and their components
 
 ## Code Quality Enhancements
 
@@ -81,6 +90,8 @@ Enhanced error boundary implementation:
 - Used React Query for efficient API state management
 - Implemented debouncing for input events
 - Added virtualization for message list to handle large conversations
+- Implemented React.lazy and Suspense for code splitting to reduce initial load time
+- Created a LoadingSpinner component with appealing animations for loading states
 
 ## UI/UX Improvements
 
@@ -88,11 +99,49 @@ Enhanced error boundary implementation:
 - Improved file upload experience with better visual feedback
 - Added more keyboard shortcuts and focus management
 
+## CSS Modules Migration (In Progress)
+
+### Migrated Components:
+- `src/features/chat/components/FileAttachments.tsx` → using `FileAttachments.module.css`
+- `src/features/chat/components/Message.tsx` → using `Message.module.css`
+- `src/features/chat/components/MessageList.tsx` → using `MessageList.module.css`
+- `src/features/chat/components/ModelSelector.tsx` → using `ModelSelector.module.css`
+- `src/features/chat/components/SystemPromptEditor.tsx` → using `SystemPromptEditor.module.css`
+- `src/features/chat/components/ChatInput.tsx` → using `ChatInput.module.css`
+- `src/features/chat/components/MessageComposer.tsx` → using `MessageComposer.module.css`
+- `src/features/chat/components/ToolbarControls.tsx` → using `ToolbarControls.module.css`
+- `src/components/VoiceInput.tsx` → using `VoiceInput.module.css`
+- `src/features/conversation/components/ConversationTitle.tsx` → using `ConversationTitle.module.css`
+- `src/features/conversation/components/ConversationList.tsx` → using `ConversationList.module.css`
+
+### Benefits of CSS Modules:
+- Improved style encapsulation to prevent class name collisions
+- Better organized and maintainable CSS
+- Component-scoped styling
+- Type-safe styling with TypeScript integration
+- Easier refactoring and maintenance
+
+### Design System Implementation:
+- Created `src/styles/variables.css` with standardized design tokens:
+  - Spacing scales
+  - Color system with light/dark theme variables
+  - Typography scales
+  - Border radii
+  - Shadow values
+  - Animation timings
+  - Layout constants
+- Implemented module-based import system with `src/styles/index.css`
+- Ensured theme consistency throughout component styles
+
 ## Additional Improvements Needed
 
 1. Complete CSS Modules migration:
-   - Convert existing CSS to CSS Modules for better encapsulation
-   - Create a consistent design system with shared variables
+   - Continue converting remaining components to use CSS Modules:
+     - Priority components to convert: ConversationControls, Header, ApiKeyModal
+     - Completed: FileAttachments, Message, MessageList, ModelSelector, SystemPromptEditor, ChatInput, MessageComposer, ToolbarControls, VoiceInput, ConversationTitle, ConversationList, LoadingSpinner
+   - Update all components to use the design system variables
+   - Complete color system with appropriate contrast ratios for accessibility
+   - Remove the general App.css file once all components have been migrated
 
 2. Enhance State Management:
    - Remove any remaining "any" types in reducers

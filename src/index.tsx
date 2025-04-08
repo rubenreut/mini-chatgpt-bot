@@ -1,10 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import './styles/index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import * as serviceWorker from './serviceWorker';
 import { ChatProvider } from './features/chat/context/ChatContext';
 import { ThemeProvider } from './features/theme/context/ThemeContext';
+import { ToastProvider } from './shared/contexts/ToastContext';
 import ErrorBoundary from './utils/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
@@ -40,15 +42,28 @@ root.render(
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <ChatProvider>
-            <App />
-          </ChatProvider>
+          <ToastProvider position="top-right">
+            <ChatProvider>
+              <App />
+            </ChatProvider>
+          </ToastProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
       </QueryClientProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Register service worker for offline capabilities
+serviceWorker.register({
+  onSuccess: () => {
+    console.log('App is available offline.');
+  },
+  onUpdate: registration => {
+    console.log('New version available, refresh to update.');
+    // Here you could notify the user with a toast
+  }
+});
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

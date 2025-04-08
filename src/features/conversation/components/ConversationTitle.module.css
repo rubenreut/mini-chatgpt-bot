@@ -1,0 +1,68 @@
+.container {
+  margin-bottom: var(--spacing-md);
+}
+
+.titleDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.titleText {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-color);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titleText:hover {
+  text-decoration: underline;
+}
+
+.editForm {
+  width: 100%;
+}
+
+.editInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  background-color: var(--assistant-message-bg);
+  color: var(--text-color);
+}
+
+.editInput:focus {
+  outline: none;
+  border-color: var(--primary-button);
+  box-shadow: 0 0 0 2px rgba(3, 102, 214, 0.2);
+}
+
+.newButton {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  transition: background-color var(--transition-fast);
+}
+
+.newButton:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.plusIcon {
+  font-size: 1.1rem;
+  font-weight: bold;
+}

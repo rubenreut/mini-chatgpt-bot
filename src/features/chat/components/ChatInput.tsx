@@ -9,6 +9,7 @@ import FileUploadPanel from './FileUploadPanel';
 import ToolbarControls from './ToolbarControls';
 import MessageComposer from './MessageComposer';
 import { debounce } from '../../../utils/debounce';
+import styles from './ChatInput.module.css';
 
 interface ChatInputProps {
   handleSendMessage: (messageData: MessageData) => Promise<void>;
@@ -93,8 +94,20 @@ const ChatInput = ({
     }
   };
 
+  // Build upload button classname
+  const uploadButtonClasses = [
+    styles.uploadButton,
+    showFileUploader ? styles.active : ''
+  ].filter(Boolean).join(' ');
+
+  // Build send button classname
+  const sendButtonClasses = [
+    styles.sendButton,
+    (isLoading || isListening) ? styles.disabled : ''
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className="input-area">
+    <div className={styles.inputArea}>
       <ToolbarControls
         onSystemPromptClick={() => setShowSystemPromptEditor(true)}
         voiceEnabled={voiceEnabled}
@@ -106,8 +119,8 @@ const ChatInput = ({
       
       {showFileUploader && <FileUploadPanel onFileSelect={handleFileSelect} />}
       
-      <div className="input-container">
-        <div className="input-box">
+      <div className={styles.inputContainer}>
+        <div className={styles.inputBox}>
           <MessageComposer
             userInput={userInput}
             setUserInput={setUserInput}
@@ -120,31 +133,31 @@ const ChatInput = ({
           />
           
           <button 
-            className={`upload-button ${showFileUploader ? 'active' : ''}`} 
+            className={uploadButtonClasses} 
             onClick={handleToggleFileUploader}
             title="Upload files"
             aria-label="Upload files"
           >
             <AnimatedPlusIcon isActive={showFileUploader} />
             {uploadedFiles.length > 0 && (
-              <span className="file-count">{uploadedFiles.length}</span>
+              <span className={styles.fileCount}>{uploadedFiles.length}</span>
             )}
           </button>
           
           <button 
-            className={`send-button ${(isLoading || isListening) ? 'disabled' : ''}`} 
+            className={sendButtonClasses} 
             onClick={handleSubmitMessage} 
             disabled={isLoading || (!userInput.trim() && uploadedFiles.length === 0) || isListening || isSpeaking}
           >
             {isLoading ? (
-              <span className="loading-spinner"></span>
+              <span className={styles.loadingSpinner}></span>
             ) : (
               <FiSend />
             )}
           </button>
         </div>
         
-        {isLoading && <div className="thinking-text">AI is thinking...</div>}
+        {isLoading && <div className={styles.thinkingText}>AI is thinking...</div>}
         
         {uploadedFiles.length > 0 && (
           <FileAttachments 

@@ -36,6 +36,7 @@ export interface MessageData {
 }
 
 export interface FileWithPreview {
+  id: string;
   file: File;
   preview: string;
   name: string;

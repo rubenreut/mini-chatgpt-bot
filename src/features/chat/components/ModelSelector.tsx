@@ -1,5 +1,6 @@
 import React from 'react';
 import { Model } from '../../../shared/types';
+import styles from './ModelSelector.module.css';
 
 interface ModelSelectorProps {
   selectedModel: string;
@@ -17,13 +18,13 @@ const ModelSelector = ({ selectedModel, handleModelChange }: ModelSelectorProps)
   };
 
   return (
-    <div className="model-selector">
+    <div className={styles.modelSelector}>
       <label htmlFor="model-select">Model:</label>
       <select 
         id="model-select" 
         value={selectedModel} 
         onChange={handleChange}
-        className="model-select-dropdown"
+        className={styles.selectDropdown}
       >
         {models.map(model => (
           <option key={model.id} value={model.id}>

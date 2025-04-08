@@ -1,0 +1,48 @@
+.voiceInputButton {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  width: 36px;
+  height: 36px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-color);
+}
+
+.voiceInputButton:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.listening {
+  background-color: #ef5350;
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+.error {
+  background-color: var(--error-color);
+  color: white;
+  cursor: not-allowed;
+}
+
+.listeningIndicator {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
