@@ -1,5 +1,5 @@
 import React, { useEffect, lazy, Suspense } from "react";
-import "./App.css";
+import styles from "./App.module.css";
 
 // Import Prism for code highlighting
 import Prism from "prismjs";
@@ -74,14 +74,14 @@ const App = (): React.ReactNode => {
   };
 
   return (
-    <div className={`app-container ${showConversationList ? 'with-sidebar' : ''}`}>
+    <div className={`${styles.appContainer} ${showConversationList ? styles.withSidebar : ''}`}>
       {/* Network Status Banner */}
       <NetworkStatus />
       
       {showConversationList && (
         <ErrorBoundary 
           fallback={
-            <div className="error-sidebar">
+            <div className={styles.errorSidebar}>
               <h3>Unable to load conversations</h3>
               <button onClick={() => window.location.reload()}>
                 Reload
@@ -89,11 +89,11 @@ const App = (): React.ReactNode => {
             </div>
           }
         >
-          <aside className="conversation-sidebar">
-            <div className="sidebar-header">
+          <aside className={styles.conversationSidebar}>
+            <div className={styles.sidebarHeader}>
               <h2>Conversations</h2>
               <button 
-                className="close-sidebar" 
+                className={styles.closeSidebar} 
                 onClick={handleToggleConversationList}
                 aria-label="Close conversation list"
               >
@@ -101,10 +101,10 @@ const App = (): React.ReactNode => {
               </button>
             </div>
             <button 
-              className="new-chat-button" 
+              className={styles.newChatButton} 
               onClick={createNewConversation}
             >
-              <span className="plus-icon">+</span> New Chat
+              <span className={styles.plusIcon}>+</span> New Chat
             </button>
             <Suspense fallback={<LoadingSpinner text="Loading conversations..." />}>
               <ConversationList 
@@ -118,7 +118,7 @@ const App = (): React.ReactNode => {
         </ErrorBoundary>
       )}
       
-      <div className="chat-container">
+      <div className={styles.chatContainer}>
         <ErrorBoundary>
           <Header
             darkMode={darkMode}
@@ -144,7 +144,7 @@ const App = (): React.ReactNode => {
         
         <ErrorBoundary 
           fallback={(error, resetError) => (
-            <div className="messages-error">
+            <div className={styles.messagesError}>
               <h3>Error displaying messages</h3>
               <p>There was a problem rendering the chat messages.</p>
               <button onClick={resetError}>Try Again</button>
