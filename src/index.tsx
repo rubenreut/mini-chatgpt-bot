@@ -3,10 +3,32 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { ThemeProvider } from './context/ThemeContext';
-import { ChatProvider } from './context/ChatContext';
-import QueryProvider from './providers/QueryProvider';
+import { ChatProvider } from './features/chat/context/ChatContext';
 import ErrorBoundary from './utils/ErrorBoundary';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { ReactQueryDevtools } from 'react-query/devtools';
+
+// Create a client with defaults optimized for chat applications
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Don't refetch on window focus for chat applications
+      refetchOnWindowFocus: false,
+      // Keep data fresh for 5 minutes
+      staleTime: 5 * 60 * 1000,
+      // Retry failed queries 3 times
+      retry: 3,
+      // Use exponential backoff for retries
+      retryDelay: attempt => Math.min(1000 * 2 ** attempt, 30000),
+    },
+    mutations: {
+      // Retry failed mutations 2 times
+      retry: 2,
+      // Use exponential backoff for retries
+      retryDelay: attempt => Math.min(1000 * 2 ** attempt, 30000),
+    },
+  },
+});
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -15,13 +37,12 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <QueryProvider>
-        <ThemeProvider>
-          <ChatProvider>
-            <App />
-          </ChatProvider>
-        </ThemeProvider>
-      </QueryProvider>
+      <QueryClientProvider client={queryClient}>
+        <ChatProvider>
+          <App />
+        </ChatProvider>
+        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
+      </QueryClientProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

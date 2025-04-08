@@ -1,0 +1,61 @@
+/* Typing indicator animation */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  column-gap: 6px;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.dark-theme .typing-indicator {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.typing-indicator span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #888;
+  border-radius: 50%;
+  animation: typing-bubble 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typing-bubble {
+  0%, 80%, 100% { 
+    transform: scale(0.6);
+  }
+  40% { 
+    transform: scale(1.0);
+  }
+}
+
+/* Streaming message effect */
+.message.streaming .message-content {
+  border-left: 3px solid #0084ff;
+  animation: pulse 2s infinite;
+}
+
+.dark-theme .message.streaming .message-content {
+  border-left: 3px solid #1a8cff;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 132, 255, 0.2);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(0, 132, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 132, 255, 0);
+  }
+}
