@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import VoiceInput from './VoiceInput';
 import FileUploader from './FileUploader';
+import AnimatedPlusIcon from './AnimatedPlusIcon';
 import { useChatContext } from '../context/ChatContext';
 import { debounce } from '../utils/debounce';
 
@@ -61,7 +62,54 @@ const ChatInput = ({ onSendMessage, loading }) => {
   }, [isListening]);
 
   const handleFileUpload = (newFiles) => {
-    setUploadedFiles(prev => [...prev, ...newFiles]);
+    // Process files to add metadata
+    const processedFiles = newFiles.map(file => {
+      // Calculate lines of code for text files
+      const getLineCount = () => {
+        return new Promise(resolve => {
+          if (file.type.startsWith('text/') || 
+              file.type === 'application/json' || 
+              file.name.endsWith('.md') || 
+              file.name.endsWith('.txt') ||
+              file.name.endsWith('.csv')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const content = e.target.result;
+              const lines = content.split('\n').length;
+              resolve(lines);
+            };
+            reader.readAsText(file);
+          } else {
+            resolve(null); // Not a text file
+          }
+        });
+      };
+      
+      // Return file with promise to get line count
+      // Get just the filename without path
+      const fileName = file.name.split('\\').pop().split('/').pop();
+      
+      return {
+        ...file,
+        fileName: fileName, // Store cleaned filename
+        lineCountPromise: getLineCount(),
+        id: Date.now() + Math.random().toString(36).substr(2, 9) // Unique ID
+      };
+    });
+    
+    // Resolve line count promises and update state
+    Promise.all(processedFiles.map(async file => {
+      const lineCount = await file.lineCountPromise;
+      return {
+        ...file,
+        lineCount,
+        lineCountPromise: undefined // Remove promise from state
+      };
+    })).then(filesWithLineCount => {
+      setUploadedFiles(prev => [...prev, ...filesWithLineCount]);
+    });
+    
+    setShowFileUploader(false);
   };
 
   const toggleFileUploader = () => {
@@ -105,19 +153,6 @@ const ChatInput = ({ onSendMessage, loading }) => {
           <span className="button-label">System Prompt</span>
         </button>
         
-        <button 
-          onClick={toggleFileUploader}
-          className={`toolbar-button file-upload-button ${showFileUploader ? 'active' : ''}`}
-          title="Upload files"
-          aria-label="Upload files"
-        >
-          <span role="img" aria-hidden="true">📎</span>
-          <span className="button-label">Upload Files</span>
-          {uploadedFiles.length > 0 && (
-            <span className="file-count">{uploadedFiles.length}</span>
-          )}
-        </button>
-        
         {voiceEnabled && (
           <VoiceInput 
             onTranscript={handleVoiceInput}
@@ -138,7 +173,31 @@ const ChatInput = ({ onSendMessage, loading }) => {
       </div>
       
       {showFileUploader && (
-        <FileUploader onFileUpload={handleFileUpload} loading={loading} />
+        <div className="upload-options-menu">
+          <div className="upload-option" onClick={() => document.getElementById('file-input').click()}>
+            <span role="img" aria-hidden="true" style={{ fontSize: '1.4rem' }}>📄</span>
+            <span>Upload a file</span>
+            <input 
+              id="file-input"
+              type="file" 
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  handleFileUpload(Array.from(e.target.files));
+                }
+              }}
+            />
+          </div>
+          <div className="upload-option">
+            <span role="img" aria-hidden="true" style={{ fontSize: '1.4rem' }}>🐙</span>
+            <span>Add from GitHub</span>
+          </div>
+          <div className="upload-option">
+            <span role="img" aria-hidden="true" style={{ fontSize: '1.4rem' }}>📁</span>
+            <span>Add from Google Drive</span>
+          </div>
+        </div>
       )}
       
       <div className="input-container">
@@ -155,6 +214,19 @@ const ChatInput = ({ onSendMessage, loading }) => {
             disabled={loading || isListening || isSpeaking}
             rows={3}
           />
+          
+          <button 
+            className={`upload-button ${showFileUploader ? 'active' : ''}`} 
+            onClick={toggleFileUploader}
+            title="Upload files"
+            aria-label="Upload files"
+          >
+            <AnimatedPlusIcon isActive={showFileUploader} />
+            {uploadedFiles.length > 0 && (
+              <span className="file-count">{uploadedFiles.length}</span>
+            )}
+          </button>
+          
           <button 
             className={`send-button ${(loading || isListening) ? 'disabled' : ''}`} 
             onClick={sendMessage} 
@@ -171,15 +243,64 @@ const ChatInput = ({ onSendMessage, loading }) => {
         </div>
         {loading && <div className="thinking-text">AI is thinking...</div>}
         
-        {uploadedFiles.length > 0 && !showFileUploader && (
+        {uploadedFiles.length > 0 && (
           <div className="files-summary">
-            <span>{uploadedFiles.length} file(s) attached</span>
-            <button onClick={toggleFileUploader} className="files-view-button">
-              View
-            </button>
-            <button onClick={clearFiles} className="files-clear-button">
-              Clear
-            </button>
+            <div className="file-attachments">
+              {uploadedFiles.map((file) => (
+                <div className="file-attachment" key={file.id}>
+                  <div className="file-attachment-header">
+                    <div className="file-attachment-name" title={file.fileName || file.name || "File"}>
+                      {file.fileName || file.name || "File"}
+                    </div>
+                  </div>
+                  <div className="file-attachment-content">
+                    <div className="file-lines-count">
+                      {file.lineCount ? `${file.lineCount} lines` : ''}
+                    </div>
+                    <div className="file-attachment-icon">
+                      {file.type && file.type.startsWith('image/') ? (
+                        '🖼️'
+                      ) : file.type && file.type.includes('pdf') ? (
+                        '📄'
+                      ) : file.type && file.type.includes('spreadsheet') || (file.name && file.name.endsWith('.csv')) ? (
+                        '📊'
+                      ) : file.type && file.type.includes('javascript') || (file.name && file.name.endsWith('.js')) ? (
+                        '📜'
+                      ) : file.type && file.type.includes('html') ? (
+                        '🌐'
+                      ) : (
+                        '📝'
+                      )}
+                    </div>
+                  </div>
+                  <div className="file-attachment-details">
+                    <div className="file-attachment-type">
+                      {file.name ? 
+                        file.name.includes('.') ? 
+                          `.${file.name.split('.').pop()}` : 
+                          (file.type ? `.${file.type.split('/')[1]}` : '')
+                        : 
+                        (file.type ? `.${file.type.split('/')[1]}` : '')}
+                    </div>
+                  </div>
+                  <button 
+                    className="file-attachment-remove"
+                    onClick={() => {
+                      setUploadedFiles(files => files.filter(f => f.id !== file.id));
+                    }}
+                    aria-label="Remove file"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            {uploadedFiles.length > 0 && (
+              <button className="clear-attachments" onClick={clearFiles}>
+                <span>×</span> Clear all attachments
+              </button>
+            )}
           </div>
         )}
       </div>

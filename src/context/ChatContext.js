@@ -244,8 +244,42 @@ export const ChatProvider = ({ children }) => {
       userContent += userContent ? '\n\n' : '';
       userContent += `Attached files:\n${fileList}`;
       
-      // Process files (in a real scenario, you'd upload these to a server)
-      // For this demo, we'll just include file info in the conversation
+      // Process files to extract content for the LLM
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          // Create a Promise wrapper around FileReader
+          const readFileAsText = (file) => {
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => reject(reader.error);
+              
+              // Read file based on type
+              if (file.type.startsWith('text/') || 
+                  file.type === 'application/json' || 
+                  file.name.endsWith('.md') || 
+                  file.name.endsWith('.txt') ||
+                  file.name.endsWith('.csv')) {
+                reader.readAsText(file);
+              } else if (file.type.startsWith('image/')) {
+                // For images we could use readAsDataURL, but for simplicity
+                // just mention we can't process the image directly
+                resolve(`[This is an image file. In a production environment, we would process this using image analysis capabilities.]`);
+              } else {
+                resolve(`[File content not directly accessible. This file type (${file.type}) requires specialized processing.]`);
+              }
+            });
+          };
+          
+          // Read the file and add its content to the message
+          const content = await readFileAsText(file);
+          userContent += `\n\n--------- CONTENT OF FILE: ${file.name} ---------\n${content}\n----------- END OF FILE CONTENT -----------`;
+        } catch (error) {
+          console.error(`Error reading file ${file.name}:`, error);
+          userContent += `\n\nError reading file ${file.name}: ${error.message}`;
+        }
+      }
     }
 
     const newMessages = [...messages, { role: 'user', content: userContent }];
