@@ -32,7 +32,7 @@
   --button-hover-bg: #e1e4e8;
 
   /* Message Colors */
-  --user-message-bg: #0366d6;
+  --user-message-bg: #0075FF;
   --user-message-color: white;
   --assistant-message-bg: white;
   
@@ -172,7 +172,7 @@
   --button-hover-bg: #30363d;
 
   /* Message Colors */
-  --user-message-bg: #1f6feb;
+  --user-message-bg: #0066cc;
   --user-message-color: #f0f6fc;
   --assistant-message-bg: #21262d;
 

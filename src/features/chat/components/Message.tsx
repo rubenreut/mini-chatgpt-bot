@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Prism from 'prismjs';
@@ -9,6 +9,8 @@ import { Components } from 'react-markdown';
 interface MessageProps {
   message: MessageType;
   isStreaming?: boolean;
+  onHeightChange?: (height: number) => void;
+  isAnimated?: boolean;
 }
 
 // Define correct types for ReactMarkdown components
@@ -19,8 +21,15 @@ interface CodeProps {
   children?: React.ReactNode;
 }
 
-const Message: React.FC<MessageProps> = ({ message, isStreaming = false }) => {
+const Message: React.FC<MessageProps> = ({ 
+  message, 
+  isStreaming = false,
+  onHeightChange,
+  isAnimated = false
+}) => {
   const codeRef = useRef<HTMLDivElement>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number>(0);
 
   // Highlight code blocks when message content changes
   useEffect(() => {
@@ -28,6 +37,34 @@ const Message: React.FC<MessageProps> = ({ message, isStreaming = false }) => {
       Prism.highlightAllUnder(codeRef.current);
     }
   }, [message.content, message.role]);
+  
+  // Use ResizeObserver to detect height changes for virtualization
+  useEffect(() => {
+    if (!messageRef.current || !onHeightChange) return;
+    
+    // Get initial height
+    const newHeight = messageRef.current.offsetHeight;
+    setHeight(newHeight);
+    onHeightChange(newHeight);
+    
+    // Set up resize observer to detect dynamic height changes (e.g. when images load)
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const element = entry.target as HTMLElement;
+        const newHeight = element.offsetHeight;
+        if (newHeight !== height) {
+          setHeight(newHeight);
+          onHeightChange(newHeight);
+        }
+      }
+    });
+    
+    resizeObserver.observe(messageRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [onHeightChange, height, message.content]);
 
   const renderContent = (content: string) => {
     // Define custom components for react-markdown
@@ -78,9 +115,13 @@ const Message: React.FC<MessageProps> = ({ message, isStreaming = false }) => {
     isStreaming ? styles.streaming : ''
   ].filter(Boolean).join(' ');
 
+  // Add animated class if needed
+  const animatedClass = isAnimated ? styles.animated : '';
+  const allClasses = `${messageClasses} ${animatedClass}`;
+
   return (
-    <div className={messageClasses}>
-      <div className={styles.messageRole}>{message.role === 'user' ? 'You' : 'Assistant'}</div>
+    <div ref={messageRef} className={allClasses}>
+      <div className={styles.messageRole}>{message.role === 'user' ? 'You' : 'AI'}</div>
       <div className={styles.messageContent}>
         {message.role === 'user' ? 
           message.content : 

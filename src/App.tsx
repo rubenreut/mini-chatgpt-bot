@@ -12,22 +12,28 @@ import "prismjs/components/prism-json";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-sql";
 
+// Import context hooks
+import { useChatContext } from "./features/chat/context/ChatContext";
+import { useThemeContext } from "./features/theme/context/ThemeContext";
+import useAppCommands from "./hooks/useAppCommands";
+import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+
 // Import essential components immediately
 import Header from "./features/core/components/Header";
 import ErrorBoundary from "./utils/ErrorBoundary";
 import LoadingSpinner from "./components/LoadingSpinner";
 import NetworkStatus from "./shared/components/NetworkStatus";
+import { CommandPalette } from "./context/commandPalette";
+import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
 
 // Lazily load non-critical components
-const MessageList = lazy(() => import("./features/chat/components/MessageList"));
+// Using a simple directly rendered component for better reliability
+// Using SimpleChatHistory instead of MessageList for more reliable rendering
+const MessageList = lazy(() => import("./features/chat/components/SimpleChatHistory"));
 const ChatInput = lazy(() => import("./features/chat/components/ChatInput"));
 const SystemPromptEditor = lazy(() => import("./features/chat/components/SystemPromptEditor"));
 const ConversationTitle = lazy(() => import("./features/conversation/components/ConversationTitle"));
 const ConversationList = lazy(() => import("./features/conversation/components/ConversationList"));
-
-// Import context hooks
-import { useChatContext } from "./features/chat/context/ChatContext";
-import { useThemeContext } from "./features/theme/context/ThemeContext";
 
 const App = (): React.ReactNode => {
   const {
@@ -58,6 +64,13 @@ const App = (): React.ReactNode => {
   const { darkMode, toggleDarkMode } = useThemeContext();
 
   // Highlight code blocks when messages change
+  // Register app commands for command palette
+  const { showKeyboardShortcuts, setShowKeyboardShortcuts } = useAppCommands();
+  
+  // Register keyboard shortcuts
+  useKeyboardShortcuts();
+  
+  // Highlight code blocks when messages change
   useEffect(() => {
     Prism.highlightAll();
   }, [messages]);
@@ -77,6 +90,15 @@ const App = (): React.ReactNode => {
     <div className={`${styles.appContainer} ${showConversationList ? styles.withSidebar : ''}`}>
       {/* Network Status Banner */}
       <NetworkStatus />
+      
+      {/* Command Palette */}
+      <CommandPalette />
+      
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp 
+        isOpen={showKeyboardShortcuts} 
+        onClose={() => setShowKeyboardShortcuts(false)} 
+      />
       
       {showConversationList && (
         <ErrorBoundary 
@@ -152,7 +174,14 @@ const App = (): React.ReactNode => {
           )}
         >
           <Suspense fallback={<LoadingSpinner text="Loading messages..." />}>
-            <MessageList messages={messages} />
+            <div className={styles.messagesWrapper} data-testid="messages-wrapper">
+              <MessageList messages={messages} />
+              {/* Debug info - remove in production */}
+              <div style={{ display: 'none' }}>
+                {messages.filter(m => m.role === 'user').length > 0 && 
+                  `User messages: ${messages.filter(m => m.role === 'user').length}`}
+              </div>
+            </div>
           </Suspense>
         </ErrorBoundary>
         

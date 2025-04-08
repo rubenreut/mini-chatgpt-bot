@@ -7,6 +7,7 @@ import * as serviceWorker from './serviceWorker';
 import { ChatProvider } from './features/chat/context/ChatContext';
 import { ThemeProvider } from './features/theme/context/ThemeContext';
 import { ToastProvider } from './shared/contexts/ToastContext';
+import { CommandPaletteProvider } from './context/commandPalette/CommandPaletteContext';
 import ErrorBoundary from './utils/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
@@ -43,9 +44,11 @@ root.render(
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <ToastProvider position="top-right">
-            <ChatProvider>
-              <App />
-            </ChatProvider>
+            <CommandPaletteProvider>
+              <ChatProvider>
+                <App />
+              </ChatProvider>
+            </CommandPaletteProvider>
           </ToastProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}

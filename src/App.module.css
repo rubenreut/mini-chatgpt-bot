@@ -7,6 +7,11 @@
   overflow: hidden;
 }
 
+/* Dark theme specific overrides */
+[data-theme="dark"] .chatContainer {
+  background-color: #0d1117;
+}
+
 .withSidebar .chatContainer {
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width));
@@ -14,14 +19,25 @@
 
 /* Chat container */
 .chatContainer {
-  padding: var(--spacing-md) var(--spacing-lg);
-  max-width: var(--max-width-container);
+  padding: 20px;
+  max-width: 800px;
   margin: 0 auto;
   width: 100%;
   height: 100vh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  background-color: var(--bg-color, #f9fafb);
+}
+
+/* Messages wrapper for better organization and debugging */
+.messagesWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background-color: inherit;
 }
 
 /* Conversation sidebar */

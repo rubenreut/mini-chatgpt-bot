@@ -327,9 +327,33 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       // If we weren't streaming, update with the actual response
       // Otherwise, the streaming updates have already been applied
       if (!isStreaming) {
+        // Get all messages before the assistant response and add the new reply
+        // This is more robust than using slice to ensure we don't lose messages
+        const userMessages = state.messages.filter(msg => msg.role === 'user' || msg.role === 'system');
+        const assistantMessages = state.messages.filter(msg => msg.role === 'assistant');
+        
+        // Create a new messages array preserving all user messages
+        // And replacing only the last assistant message if it exists
+        let allMessages: Message[];
+        
+        if (assistantMessages.length > 0) {
+          // Remove the last assistant message (the optimistic one)
+          const assistantWithoutLast = assistantMessages.slice(0, -1);
+          // Combine user messages, existing assistant messages, and the new reply
+          allMessages = [...userMessages, ...assistantWithoutLast, reply];
+        } else {
+          // Just add the reply to existing messages
+          allMessages = [...userMessages, reply];
+        }
+        
+        // Add console logging to debug message count
+        console.log("onSuccess handler - all messages:", allMessages.length);
+        console.log("User messages:", allMessages.filter(m => m.role === 'user').length);
+        console.log("Assistant messages:", allMessages.filter(m => m.role === 'assistant').length);
+        
         dispatch({ 
           type: ActionType.SET_MESSAGES, 
-          payload: [...state.messages.slice(0, -1), reply]
+          payload: allMessages
         });
       }
       
@@ -337,11 +361,31 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       
       // Save to conversation cache with the final reply
       if (state.activeConversationId) {
-        // For streaming, get the latest messages including any accumulated streaming content
-        const messagesToSave = isStreaming
-          ? [...state.messages.slice(0, -1), { ...reply, content: streamingResponse }]
-          : [...state.messages.slice(0, -1), reply];
+        let messagesToSave: Message[];
+        
+        if (isStreaming) {
+          // For streaming, make sure we have all user messages plus the final assistant message
+          const userAndSystemMessages = state.messages.filter(msg => msg.role === 'user' || msg.role === 'system');
+          const assistantMessages = state.messages.filter(msg => msg.role === 'assistant');
           
+          // Replace the last assistant message with the final reply
+          if (assistantMessages.length > 0) {
+            const assistantWithoutLast = assistantMessages.slice(0, -1);
+            const finalReply = { ...reply, content: streamingResponse };
+            messagesToSave = [...userAndSystemMessages, ...assistantWithoutLast, finalReply];
+          } else {
+            messagesToSave = [...userAndSystemMessages, { ...reply, content: streamingResponse }];
+          }
+        } else {
+          // If not streaming, just use the state.messages which already contains the reply
+          messagesToSave = state.messages;
+        }
+        
+        // Log message counts before saving  
+        console.log("Saving conversation - messages:", messagesToSave.length);
+        console.log("User messages:", messagesToSave.filter(m => m.role === 'user').length);
+        console.log("Assistant messages:", messagesToSave.filter(m => m.role === 'assistant').length);
+        
         saveCurrentConversation(messagesToSave);
       }
       
@@ -649,7 +693,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                   file.type === 'application/json' || 
                   file.name.endsWith('.md') || 
                   file.name.endsWith('.txt') ||
-                  file.name.endsWith('.csv')) {
+                  file.name.endsWith('.csv') ||
+                  file.name.endsWith('.js') ||
+                  file.name.endsWith('.jsx') ||
+                  file.name.endsWith('.ts') ||
+                  file.name.endsWith('.tsx') ||
+                  file.name.endsWith('.py') ||
+                  file.name.endsWith('.html') ||
+                  file.name.endsWith('.css')) {
                 // For large files, limit reading to first megabyte
                 if (file.size > 1024 * 1024) {
                   reader.readAsText(file.slice(0, 1024 * 1024));
@@ -657,7 +708,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                   reader.readAsText(file);
                 }
               } else if (file.type.startsWith('image/')) {
-                resolve(`[This is an image file. In a production environment, we would process this using image analysis capabilities.]`);
+                reader.readAsDataURL(file);
               } else {
                 resolve(`[File content not directly accessible. This file type (${file.type}) requires specialized processing.]`);
               }
@@ -691,6 +742,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const files = messageData.files || [];
     
     if (!userText.trim() && files.length === 0) return;
+    
+    console.log("Current message count:", state.messages.length);
     
     // Check if API key is available
     if (!state.apiKey.trim()) {
@@ -726,15 +779,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
     }
 
-    // Add the user message to state
-    const userMessage: Message = { role: 'user', content: userContent };
+    // Add the user message to state with timestamp for stability
+    const userMessage: Message = { 
+      role: 'user', 
+      content: userContent,
+      timestamp: Date.now() // Add timestamp for key stability
+    };
+    
+    console.log("Adding user message:", userMessage.content.substring(0, 30));
     dispatch({ type: ActionType.ADD_MESSAGE, payload: userMessage });
     dispatch({ type: ActionType.SET_LOADING, payload: true });
 
     // Create a new array with all messages including the new user message
     const newMessages = [...state.messages, userMessage];
+    console.log("newMessages length:", newMessages.length);
+    console.log("User messages count:", newMessages.filter(m => m.role === 'user').length);
 
     // If first message in the conversation, update title automatically
+    // CRITICAL: We keep the user message in the message list
     if (state.messages.filter(msg => msg.role === 'user').length === 0) {
       const title = userText?.length > 30 
         ? userText.substring(0, 27) + '...' 
@@ -742,11 +804,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       
       // Optimistically update title
       updateConversationTitle(title);
+      console.log("Updated conversation title:", title);
     }
 
     // Reset streaming state
     setStreamingResponse('');
     setIsStreaming(true);
+    console.log("Starting new message, current messages:", state.messages.length);
 
     // Add an initial streaming message
     const initialStreamingMessage: Message = { 
@@ -757,18 +821,44 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // Define streaming update handler
     const handleStreamUpdate = (chunk: string) => {
-      setStreamingResponse((prev: string) => prev + chunk);
-      
-      // Update the message with current streaming content
-      const updatedMessage: Message = {
-        role: 'assistant',
-        content: streamingResponse + chunk
-      };
-      
-      // Update the last message with new content
-      dispatch({ 
-        type: ActionType.SET_MESSAGES, 
-        payload: [...state.messages.slice(0, -1), updatedMessage]
+      // Properly handle the streaming updates with a callback
+      setStreamingResponse(prev => {
+        const newContent = prev + chunk;
+        
+        // Update the message with current streaming content
+        const updatedMessage: Message = {
+          role: 'assistant',
+          content: newContent,
+          timestamp: Date.now() // Add timestamp for better key management
+        };
+        
+        // PRESERVE ALL PREVIOUS MESSAGES including user messages
+        // We check how many messages are there and update only the last one (assistant)
+        const currentMessages = [...state.messages];
+        
+        // Check if the last message is an assistant message
+        if (currentMessages.length > 0 && 
+            currentMessages[currentMessages.length - 1].role === 'assistant') {
+          // Just update the last message's content
+          currentMessages[currentMessages.length - 1] = updatedMessage;
+        } else {
+          // Add the assistant message if there isn't one at the end
+          currentMessages.push(updatedMessage);
+        }
+        
+        // Validate message counts before dispatch
+        const userCount = currentMessages.filter(m => m.role === 'user').length;
+        const assistantCount = currentMessages.filter(m => m.role === 'assistant').length;
+        
+        console.log(`Streaming update, user: ${userCount}, assistant: ${assistantCount}`);
+        console.log("Total messages to update:", currentMessages.length);
+        
+        dispatch({ 
+          type: ActionType.SET_MESSAGES, 
+          payload: currentMessages
+        });
+        
+        return newContent;
       });
     };
 

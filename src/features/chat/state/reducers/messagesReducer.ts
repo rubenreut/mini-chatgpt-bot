@@ -25,13 +25,28 @@ export const messagesReducer = (
       return { ...state, messages: action.payload };
       
     case ActionType.ADD_MESSAGE:
-      return { ...state, messages: [...state.messages, action.payload] };
+      const addedMessages = [...state.messages, action.payload];
+      console.log("Added message, now have", addedMessages.length, "messages");
+      return { ...state, messages: addedMessages };
       
     case ActionType.SET_LOADING:
       return { ...state, loading: action.payload };
       
     case ActionType.SET_ACTIVE_CONVERSATION:
-      return { ...state, messages: action.payload.messages };
+      // Make sure we properly load conversation messages including the system prompt
+      const conversationMessages = [...action.payload.messages]; // Create a copy to ensure immutability
+      console.log("Loading conversation with", conversationMessages.length, "messages");
+      
+      // Make sure we have at least a system message
+      const hasSystemMsg = conversationMessages.some(msg => msg.role === 'system');
+      if (!hasSystemMsg && action.payload.systemPrompt) {
+        conversationMessages.unshift({
+          role: 'system',
+          content: action.payload.systemPrompt
+        });
+      }
+      
+      return { ...state, messages: conversationMessages };
       
     case ActionType.SET_SYSTEM_PROMPT:
       // Update system prompt and messages

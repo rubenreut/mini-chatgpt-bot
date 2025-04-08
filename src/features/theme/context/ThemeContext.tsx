@@ -36,7 +36,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Apply theme to body
   useEffect(() => {
-    document.body.classList.toggle('dark-theme', darkMode);
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('dark_mode', darkMode.toString());
   }, [darkMode]);
 

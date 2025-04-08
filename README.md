@@ -15,6 +15,7 @@ A lightweight, responsive React-based chat interface that connects to OpenAI's A
 - 🗣️ Voice input and text-to-speech capabilities
 - 💾 Chat history persistence
 - 📤 Export conversation feature
+- ⌨️ Command palette (⌘K) and keyboard shortcuts
 - 📊 Performance optimizations with virtualization
 - 🔍 Type safety with TypeScript
 - ✅ Comprehensive tests with Jest and Cypress
@@ -66,6 +67,14 @@ npm start
 ### UI Customization
 - **Theme Toggle**: Switch between light and dark themes
 - **Mobile Responsive**: Works well on all devices
+- **Command Palette**: Press ⌘K (or Ctrl+K) to access commands quickly
+- **Keyboard Shortcuts**: Efficiency shortcuts for common actions
+  - Alt+N: New chat
+  - Alt+E: Export conversation
+  - Alt+T: Toggle theme
+  - Alt+L: Toggle conversation list
+  - Alt+P: Edit system prompt
+  - ?: Show keyboard shortcuts help
 
 ## Development Features
 
