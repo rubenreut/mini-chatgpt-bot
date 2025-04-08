@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useCallback, useReducer, useState } from 'react';
 import { useQueryClient } from 'react-query';
-import { rootReducer, ChatState, Action } from '../state/rootReducer';
+import { rootReducer, ChatState } from '../state/rootReducer';
 import { ActionType } from '../state/actionTypes';
 import { useChatService, ChatCompletionRequest } from '../hooks/useChatService';
 import speechSynthesis from '../../../utils/speechSynthesis';
@@ -52,10 +52,16 @@ interface ChatContextType {
 }
 
 // Create context
-const ChatContext = createContext<ChatContextType>({} as ChatContextType);
+const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 // Hook to use chat context
-export const useChatContext = () => useContext(ChatContext);
+export const useChatContext = (): ChatContextType => {
+  const context = useContext(ChatContext);
+  if (!context) {
+    throw new Error('useChatContext must be used within a ChatProvider');
+  }
+  return context;
+};
 
 // Initial state
 const initialState: ChatState = {
@@ -276,8 +282,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   // Create React Query client
   const queryClient = useQueryClient();
   
-  // Create conversation cache
-  const conversationCache = new ConversationCache();
+  // Create conversation cache using useMemo to prevent recreation on each render
+  const conversationCache = React.useMemo(() => new ConversationCache(), []);
   
   // Track streaming state
   const [streamingResponse, setStreamingResponse] = useState<string>('');
@@ -451,7 +457,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       
       conversationCache.setCurrentConversationId(id);
     }
-  }, [state.systemPrompt]);
+  }, [state.systemPrompt, conversationCache]);
   
   // Create a new conversation
   const createNewConversation = useCallback(() => {
@@ -474,7 +480,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     });
     
     return newConvo.id;
-  }, [state.systemPrompt]);
+  }, [state.systemPrompt, conversationCache]);
   
   // Delete a conversation
   const deleteConversation = useCallback((id: string) => {
@@ -502,7 +508,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       console.error('Error deleting conversation:', error);
       dispatch({ type: ActionType.UPDATE_CONVERSATIONS, payload: previousConversations });
     }
-  }, [state.activeConversationId, state.conversations, loadConversation, createNewConversation]);
+  }, [state.activeConversationId, state.conversations, loadConversation, createNewConversation, conversationCache]);
   
   // Update conversation title with optimistic updates
   const updateConversationTitle = useCallback((title: string) => {
@@ -533,7 +539,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       dispatch({ type: ActionType.SET_CONVERSATION_TITLE, payload: previousTitle });
       dispatch({ type: ActionType.UPDATE_CONVERSATIONS, payload: previousConversations });
     }
-  }, [state.activeConversationId, state.conversationTitle, state.conversations]);
+  }, [state.activeConversationId, state.conversationTitle, state.conversations, conversationCache]);
   
   // Update system prompt
   const updateSystemPrompt = useCallback((prompt: string) => {
@@ -557,7 +563,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
     
     dispatch({ type: ActionType.TOGGLE_SYSTEM_PROMPT_EDITOR, payload: false });
-  }, [state.activeConversationId, state.systemPrompt, state.messages]);
+  }, [state.activeConversationId, state.systemPrompt, state.messages, conversationCache]);
   
   // Save current messages to active conversation
   const saveCurrentConversation = useCallback((messages = state.messages) => {
@@ -574,7 +580,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       type: ActionType.UPDATE_CONVERSATIONS, 
       payload: conversationCache.getAllConversations() 
     });
-  }, [state.activeConversationId, state.conversationTitle, state.messages]);
+  }, [state.activeConversationId, state.conversationTitle, state.messages, conversationCache]);
   
   // Auto-save on messages change
   useEffect(() => {
@@ -774,7 +780,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       onUpdate: handleStreamUpdate
     });
     
-  }, [state.messages, state.isSpeaking, state.apiKey, chatService, updateConversationTitle, streamingResponse]);
+  }, [state.messages, state.isSpeaking, state.apiKey, state.model, chatService, updateConversationTitle, streamingResponse]);
   
   // Handle API key submission
   const handleApiKeySubmit = useCallback((e: React.FormEvent) => {
@@ -859,52 +865,53 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     dispatch({ type: ActionType.SET_LISTENING, payload: value });
   }, []);
 
+  // Define the context value with all required properties
+  const contextValue: ChatContextType = {
+    // Core state
+    messages: state.messages,
+    loading: state.loading,
+    apiKey: state.apiKey,
+    showApiKeyModal: state.showApiKeyModal,
+    model: state.model,
+    isStreaming,
+    setApiKey,
+    setShowApiKeyModal,
+    sendMessage,
+    handleApiKeySubmit,
+    setModel,
+    
+    // Conversation management
+    conversations: state.conversations,
+    activeConversationId: state.activeConversationId,
+    showConversationList: state.showConversationList,
+    setShowConversationList,
+    loadConversation,
+    createNewConversation,
+    deleteConversation,
+    
+    // Conversation details
+    conversationTitle: state.conversationTitle,
+    updateConversationTitle,
+    clearConversation,
+    exportConversation,
+    
+    // System prompt
+    systemPrompt: state.systemPrompt,
+    showSystemPromptEditor: state.showSystemPromptEditor, 
+    setShowSystemPromptEditor,
+    updateSystemPrompt,
+    
+    // Voice features
+    isListening: state.isListening,
+    setIsListening,
+    handleVoiceInput,
+    isSpeaking: state.isSpeaking,
+    voiceEnabled: state.voiceEnabled,
+    toggleVoiceFeatures
+  };
+
   return (
-    <ChatContext.Provider
-      value={{
-        // Core state
-        messages: state.messages,
-        loading: state.loading,
-        apiKey: state.apiKey,
-        showApiKeyModal: state.showApiKeyModal,
-        model: state.model,
-        isStreaming,
-        setApiKey,
-        setShowApiKeyModal,
-        sendMessage,
-        handleApiKeySubmit,
-        setModel,
-        
-        // Conversation management
-        conversations: state.conversations,
-        activeConversationId: state.activeConversationId,
-        showConversationList: state.showConversationList,
-        setShowConversationList,
-        loadConversation,
-        createNewConversation,
-        deleteConversation,
-        
-        // Conversation details
-        conversationTitle: state.conversationTitle,
-        updateConversationTitle,
-        clearConversation,
-        exportConversation,
-        
-        // System prompt
-        systemPrompt: state.systemPrompt,
-        showSystemPromptEditor: state.showSystemPromptEditor, 
-        setShowSystemPromptEditor,
-        updateSystemPrompt,
-        
-        // Voice features
-        isListening: state.isListening,
-        setIsListening,
-        handleVoiceInput,
-        isSpeaking: state.isSpeaking,
-        voiceEnabled: state.voiceEnabled,
-        toggleVoiceFeatures
-      }}
-    >
+    <ChatContext.Provider value={contextValue}>
       {children}
     </ChatContext.Provider>
   );

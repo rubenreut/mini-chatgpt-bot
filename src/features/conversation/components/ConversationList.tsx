@@ -4,14 +4,24 @@ import { Conversation } from '../../../shared/types';
 interface ConversationListProps {
   conversations: Conversation[];
   activeId: string | null;
-  onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
+  handleSelect: (id: string) => void;
+  handleDelete: (id: string) => void;
 }
 
-const ConversationList: React.FC<ConversationListProps> = ({ conversations, activeId, onSelect, onDelete }) => {
+const ConversationList = ({ 
+  conversations, 
+  activeId, 
+  handleSelect, 
+  handleDelete 
+}: ConversationListProps): React.ReactNode => {
   if (!conversations || conversations.length === 0) {
     return null;
   }
+  
+  const handleDeleteClick = (e: React.MouseEvent, id: string): void => {
+    e.stopPropagation();
+    handleDelete(id);
+  };
   
   return (
     <div className="conversation-list">
@@ -24,7 +34,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, acti
           >
             <button 
               className="conversation-select-button" 
-              onClick={() => onSelect(convo.id)}
+              onClick={() => handleSelect(convo.id)}
               aria-current={convo.id === activeId ? 'true' : 'false'}
             >
               <span className="conversation-title-preview">{convo.title || 'Untitled Conversation'}</span>
@@ -34,10 +44,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, acti
             </button>
             <button 
               className="conversation-delete-button" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(convo.id);
-              }}
+              onClick={(e) => handleDeleteClick(e, convo.id)}
               title="Delete conversation"
               aria-label={`Delete conversation: ${convo.title || 'Untitled'}`}
             >

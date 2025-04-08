@@ -22,8 +22,8 @@ import Header from "./components/Header";
 import SystemPromptEditor from "./components/SystemPromptEditor";
 import ConversationTitle from "./components/ConversationTitle";
 import ConversationList from "./components/ConversationList";
-import { useChatContext } from "./context/ChatContext";
-import { useThemeContext } from "./context/ThemeContext";
+import { useChatContext } from "./features/chat/context/ChatContext";
+import { useThemeContext } from "./features/theme/context/ThemeContext";
 
 function App() {
   // eslint-disable-next-line no-unused-vars

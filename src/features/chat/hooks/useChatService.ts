@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, UseMutationOptions } from 'react-query';
+import { useMutation, UseMutationOptions } from 'react-query';
 import { Message, ApiError, MutationContext } from '../../../shared/types';
 
 // We're using the ErrorType from shared/types.ts
@@ -41,7 +41,6 @@ export const useChatService = (options: ChatServiceOptions = {}) => {
     onMutate,
     onSettled,
     retries = 3, 
-    enabled = true,
     apiKey = '',
     model = 'gpt-3.5-turbo'
   } = options;
@@ -158,12 +157,12 @@ export const useChatService = (options: ChatServiceOptions = {}) => {
           });
           
           if (!response.ok) {
-            throw {
+            throw new Error(JSON.stringify({
               response: {
                 status: response.status,
                 data: await response.json(),
-              },
-            };
+              }
+            }));
           }
           
           if (!response.body) {
@@ -231,12 +230,12 @@ export const useChatService = (options: ChatServiceOptions = {}) => {
         });
         
         if (!response.ok) {
-          throw {
+          throw new Error(JSON.stringify({
             response: {
               status: response.status,
               data: await response.json(),
-            },
-          };
+            }
+          }));
         }
         
         return await response.json();

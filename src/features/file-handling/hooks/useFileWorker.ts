@@ -50,7 +50,7 @@ export const useFileWorker = (options: FileWorkerOptions = {}) => {
     }
     
     // Create the worker
-    const worker = new Worker('/src/workers/fileProcessor.js');
+    const worker = new Worker('/src/workers/fileProcessor.ts');
     
     // Handle messages from the worker
     worker.onmessage = (e: MessageEvent<WorkerResult>) => {

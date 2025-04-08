@@ -1,10 +1,9 @@
 import React, { useEffect } from "react";
 import "./App.css";
-// Import Prism core first before any components
+
+// Import Prism for code highlighting
 import Prism from "prismjs";
-// Then import the theme
 import "prismjs/themes/prism-tomorrow.css";
-// Then import components
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-bash";
@@ -13,17 +12,19 @@ import "prismjs/components/prism-json";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-sql";
 
-// Import from feature-based structure
-import { MessageList, SystemPromptEditor } from "./features/chat";
-import { ConversationTitle, ConversationList, ConversationControls } from "./features/conversation";
-import { ThemeProvider } from "./features/theme";
-import { Header } from "./shared/components";
+// Import components from feature folders
+import MessageList from "./features/chat/components/MessageList";
+import ChatInput from "./features/chat/components/ChatInput";
+import Header from "./features/core/components/Header";
+import SystemPromptEditor from "./features/chat/components/SystemPromptEditor";
+import ConversationTitle from "./features/conversation/components/ConversationTitle";
+import ConversationList from "./features/conversation/components/ConversationList";
+
+// Import context hooks
 import { useChatContext } from "./features/chat/context/ChatContext";
+import { useThemeContext } from "./features/theme/context/ThemeContext";
 
-// Todo: Migrate chat input
-import ChatInput from "./components/chat/ChatInput";
-
-const App: React.FC = () => {
+const App = (): React.ReactNode => {
   const {
     messages,
     loading,
@@ -32,7 +33,6 @@ const App: React.FC = () => {
     setModel,
     clearConversation,
     exportConversation,
-    isStreaming,
     // Conversation management
     conversations,
     activeConversationId,
@@ -50,82 +50,88 @@ const App: React.FC = () => {
     updateSystemPrompt
   } = useChatContext();
 
+  const { darkMode, toggleDarkMode } = useThemeContext();
+
+  // Highlight code blocks when messages change
   useEffect(() => {
     Prism.highlightAll();
   }, [messages]);
 
   // Toggle conversation list sidebar
-  const toggleConversationList = (): void => {
+  const handleToggleConversationList = (): void => {
     setShowConversationList(!showConversationList);
   };
 
+  // Handle conversation selection
+  const handleConversationSelect = (id: string): void => {
+    loadConversation(id);
+    setShowConversationList(false);
+  };
+
   return (
-    <ThemeProvider>
-      <div className={`app-container ${showConversationList ? 'with-sidebar' : ''}`}>
-        {showConversationList && (
-          <aside className="conversation-sidebar">
-            <div className="sidebar-header">
-              <h2>Conversations</h2>
-              <button 
-                className="close-sidebar" 
-                onClick={toggleConversationList}
-                aria-label="Close conversation list"
-              >
-                ×
-              </button>
-            </div>
+    <div className={`app-container ${showConversationList ? 'with-sidebar' : ''}`}>
+      {showConversationList && (
+        <aside className="conversation-sidebar">
+          <div className="sidebar-header">
+            <h2>Conversations</h2>
             <button 
-              className="new-chat-button" 
-              onClick={createNewConversation}
+              className="close-sidebar" 
+              onClick={handleToggleConversationList}
+              aria-label="Close conversation list"
             >
-              <span className="plus-icon">+</span> New Chat
+              ×
             </button>
-            <ConversationList 
-              conversations={conversations}
-              activeId={activeConversationId}
-              onSelect={(id: string) => {
-                loadConversation(id);
-                setShowConversationList(false);
-              }}
-              onDelete={deleteConversation}
-            />
-          </aside>
-        )}
+          </div>
+          <button 
+            className="new-chat-button" 
+            onClick={createNewConversation}
+          >
+            <span className="plus-icon">+</span> New Chat
+          </button>
+          <ConversationList 
+            conversations={conversations}
+            activeId={activeConversationId}
+            handleSelect={handleConversationSelect}
+            handleDelete={deleteConversation}
+          />
+        </aside>
+      )}
+      
+      <div className="chat-container">
+        <Header
+          darkMode={darkMode}
+          handleDarkModeToggle={toggleDarkMode}
+          selectedModel={model}
+          handleModelChange={setModel}
+          handleClearConversation={clearConversation}
+          handleExportConversation={exportConversation}
+          handleToggleConversations={handleToggleConversationList}
+          isShowingConversations={showConversationList}
+        />
         
-        <div className="chat-container">
-          <Header
-            selectedModel={model}
-            onModelChange={setModel}
-            onClearConversation={clearConversation}
-            onExportConversation={exportConversation}
-            onToggleConversations={toggleConversationList}
-            showingConversations={showConversationList}
+        <ConversationTitle 
+          title={conversationTitle}
+          handleTitleChange={updateConversationTitle}
+          handleNewConversation={createNewConversation}
+        />
+        
+        <MessageList messages={messages} />
+        
+        <ChatInput 
+          handleSendMessage={sendMessage} 
+          isLoading={loading} 
+        />
+        
+        {showSystemPromptEditor && (
+          <SystemPromptEditor 
+            systemPrompt={systemPrompt}
+            handleSave={updateSystemPrompt}
+            handleCancel={() => setShowSystemPromptEditor(false)}
           />
-          
-          <ConversationTitle 
-            title={conversationTitle || ''}
-            onTitleChange={updateConversationTitle}
-            onNewConversation={createNewConversation}
-          />
-          
-          <MessageList messages={messages} isStreaming={isStreaming} />
-          
-          <ChatInput 
-            onSendMessage={sendMessage} 
-            loading={loading} 
-          />
-          
-          {showSystemPromptEditor && (
-            <SystemPromptEditor 
-              systemPrompt={systemPrompt}
-              onSave={updateSystemPrompt}
-              onCancel={() => setShowSystemPromptEditor(false)}
-            />
-          )}
-        </div>
+        )}
       </div>
-    </ThemeProvider>
+    </div>
   );
-}
+};
 
 export default App;

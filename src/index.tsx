@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ChatProvider } from './features/chat/context/ChatContext';
+import { ThemeProvider } from './features/theme/context/ThemeContext';
 import ErrorBoundary from './utils/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
@@ -38,9 +39,11 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ChatProvider>
-          <App />
-        </ChatProvider>
+        <ThemeProvider>
+          <ChatProvider>
+            <App />
+          </ChatProvider>
+        </ThemeProvider>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
       </QueryClientProvider>
     </ErrorBoundary>

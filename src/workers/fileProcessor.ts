@@ -3,8 +3,45 @@
  * This allows file processing to happen off the main thread
  */
 
+/* eslint-disable no-restricted-globals */
+// This is a web worker file, so we need to use self
+
+// Types for the messages received from the main thread
+interface ProcessMessage {
+  file: File;
+  type: 'validate' | 'process';
+  maxSizeBytes?: number;
+}
+
+// Types for file metadata
+interface ImageMetadata {
+  width: number;
+  height: number;
+  aspectRatio: number;
+}
+
+interface GenericMetadata {
+  extension: string;
+}
+
+// Types for the responses sent back to the main thread
+interface FileResponse {
+  status: 'validated' | 'complete' | 'error';
+  fileId: string;
+  error?: string;
+  result?: {
+    file: {
+      name: string;
+      size: number;
+      type: string;
+    };
+    preview: string;
+    metadata: ImageMetadata | GenericMetadata;
+  };
+}
+
 // Handle messages from main thread
-self.onmessage = function(e) {
+self.onmessage = function(e: MessageEvent<ProcessMessage>): void {
   const { file, type, maxSizeBytes = 1048576 } = e.data;
   
   try {
@@ -13,7 +50,7 @@ self.onmessage = function(e) {
       if (file.size > maxSizeBytes) {
         self.postMessage({
           status: 'error',
-          fileId: file.id || file.name,
+          fileId: (file as any).id || file.name,
           error: `File size exceeds maximum limit of ${Math.round(maxSizeBytes / 1024 / 1024)}MB`,
         });
         return;
@@ -22,7 +59,7 @@ self.onmessage = function(e) {
       // Validate file successfully
       self.postMessage({
         status: 'validated',
-        fileId: file.id || file.name,
+        fileId: (file as any).id || file.name,
       });
     } 
     else if (type === 'process') {
@@ -36,8 +73,8 @@ self.onmessage = function(e) {
   } catch (error) {
     self.postMessage({
       status: 'error',
-      fileId: file.id || file.name,
-      error: error.message || 'Error processing file',
+      fileId: (file as any).id || file.name,
+      error: error instanceof Error ? error.message : 'Error processing file',
     });
   }
 };
@@ -45,18 +82,18 @@ self.onmessage = function(e) {
 /**
  * Process an image file - create preview and extract metadata
  */
-function processImageFile(file) {
+function processImageFile(file: File): void {
   const reader = new FileReader();
   
-  reader.onload = function(e) {
-    const preview = e.target.result;
+  reader.onload = function(e: ProgressEvent<FileReader>): void {
+    const preview = e.target?.result as string;
     
     // Create a new image to get dimensions
     const img = new Image();
-    img.onload = function() {
+    img.onload = function(): void {
       self.postMessage({
         status: 'complete',
-        fileId: file.id || file.name,
+        fileId: (file as any).id || file.name,
         result: {
           file: {
             name: file.name,
@@ -73,10 +110,10 @@ function processImageFile(file) {
       });
     };
     
-    img.onerror = function() {
+    img.onerror = function(): void {
       self.postMessage({
         status: 'error',
-        fileId: file.id || file.name,
+        fileId: (file as any).id || file.name,
         error: 'Failed to load image dimensions',
       });
     };
@@ -84,10 +121,10 @@ function processImageFile(file) {
     img.src = preview;
   };
   
-  reader.onerror = function() {
+  reader.onerror = function(): void {
     self.postMessage({
       status: 'error',
-      fileId: file.id || file.name,
+      fileId: (file as any).id || file.name,
       error: 'Failed to read file',
     });
   };
@@ -98,14 +135,14 @@ function processImageFile(file) {
 /**
  * Process a generic (non-image) file
  */
-function processGenericFile(file) {
+function processGenericFile(file: File): void {
   // Generate a generic file icon based on file type
   const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
   const genericPreview = createGenericFilePreview(fileExtension, file.type);
   
   self.postMessage({
     status: 'complete',
-    fileId: file.id || file.name,
+    fileId: (file as any).id || file.name,
     result: {
       file: {
         name: file.name,
@@ -123,8 +160,8 @@ function processGenericFile(file) {
 /**
  * Create a generic file preview based on file type
  */
-function createGenericFilePreview(extension, mimeType) {
-  let iconType = 'document';
+function createGenericFilePreview(extension: string, mimeType: string): string {
+  let iconType: keyof typeof icons = 'document';
   
   // Determine icon type based on file extension or MIME type
   if (['pdf'].includes(extension) || mimeType === 'application/pdf') {

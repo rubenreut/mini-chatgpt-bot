@@ -2,18 +2,26 @@ import React, { useState, FormEvent } from 'react';
 
 interface SystemPromptEditorProps {
   systemPrompt: string;
-  onSave: (prompt: string) => void;
-  onCancel: () => void;
+  handleSave: (prompt: string) => void;
+  handleCancel: () => void;
 }
 
-const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({ systemPrompt, onSave, onCancel }) => {
+const SystemPromptEditor = ({ 
+  systemPrompt, 
+  handleSave, 
+  handleCancel 
+}: SystemPromptEditorProps): React.ReactNode => {
   const [editedPrompt, setEditedPrompt] = useState<string>(systemPrompt);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     if (editedPrompt.trim()) {
-      onSave(editedPrompt.trim());
+      handleSave(editedPrompt.trim());
     }
+  };
+  
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
+    setEditedPrompt(e.target.value);
   };
 
   return (
@@ -27,13 +35,17 @@ const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({ systemPrompt, o
           <textarea
             className="prompt-editor-textarea"
             value={editedPrompt}
-            onChange={(e) => setEditedPrompt(e.target.value)}
+            onChange={handlePromptChange}
             rows={8}
             placeholder="You are a helpful assistant..."
             autoFocus
           />
           <div className="prompt-editor-actions">
-            <button type="button" className="prompt-editor-cancel" onClick={onCancel}>
+            <button 
+              type="button" 
+              className="prompt-editor-cancel" 
+              onClick={handleCancel}
+            >
               Cancel
             </button>
             <button 

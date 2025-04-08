@@ -1,0 +1,72 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-color);
+  height: var(--header-height);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.headerControls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .headerControls {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.controlRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.conversationsToggle {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.conversationsToggle:hover {
+  background-color: var(--hover-bg);
+}
+
+.hamburgerIcon {
+  display: block;
+}
+
+.appTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .appTitle {
+    font-size: 1rem;
+  }
+}

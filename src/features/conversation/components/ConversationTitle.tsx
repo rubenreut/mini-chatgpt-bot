@@ -2,11 +2,15 @@ import React, { useState, useRef, useEffect, FormEvent } from 'react';
 
 interface ConversationTitleProps {
   title: string | null;
-  onTitleChange: (title: string) => void;
-  onNewConversation: () => void;
+  handleTitleChange: (title: string) => void;
+  handleNewConversation: () => void;
 }
 
-const ConversationTitle: React.FC<ConversationTitleProps> = ({ title, onTitleChange, onNewConversation }) => {
+const ConversationTitle = ({ 
+  title, 
+  handleTitleChange, 
+  handleNewConversation 
+}: ConversationTitleProps): React.ReactNode => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editedTitle, setEditedTitle] = useState<string>(title || '');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,13 +31,21 @@ const ConversationTitle: React.FC<ConversationTitleProps> = ({ title, onTitleCha
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     const newTitle = editedTitle.trim() || 'New Conversation';
-    onTitleChange(newTitle);
+    handleTitleChange(newTitle);
     setIsEditing(false);
   };
 
-  const startEditing = (): void => {
+  const handleEditStart = (): void => {
     setEditedTitle(title || '');
     setIsEditing(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setEditedTitle(e.target.value);
+  };
+
+  const handleInputBlur = (): void => {
+    handleSubmit({ preventDefault: () => {} } as FormEvent<HTMLFormElement>);
   };
 
   return (
@@ -45,19 +57,19 @@ const ConversationTitle: React.FC<ConversationTitleProps> = ({ title, onTitleCha
             type="text"
             className="title-edit-input"
             value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Conversation title"
-            onBlur={() => handleSubmit({ preventDefault: () => {} } as FormEvent<HTMLFormElement>)}
+            onBlur={handleInputBlur}
           />
         </form>
       ) : (
         <div className="title-display">
-          <h2 className="title-text" onClick={startEditing} title="Click to edit">
+          <h2 className="title-text" onClick={handleEditStart} title="Click to edit">
             {title || 'New Conversation'}
           </h2>
           <button 
             className="new-conversation-button" 
-            onClick={onNewConversation}
+            onClick={handleNewConversation}
             title="Start a new conversation"
             aria-label="Start a new conversation"
           >

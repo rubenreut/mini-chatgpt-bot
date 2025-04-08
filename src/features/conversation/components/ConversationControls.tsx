@@ -1,22 +1,22 @@
 import React from 'react';
 
 interface ConversationControlsProps {
-  onClear: () => void;
-  onExport: () => void;
+  handleClear: () => void;
+  handleExport: () => void;
 }
 
-const ConversationControls: React.FC<ConversationControlsProps> = ({ onClear, onExport }) => {
+const ConversationControls = ({ handleClear, handleExport }: ConversationControlsProps): React.ReactNode => {
   return (
     <div className="conversation-controls">
       <button 
-        onClick={onClear} 
+        onClick={handleClear} 
         className="control-button clear-button" 
         title="Clear conversation"
       >
         <span role="img" aria-label="Clear conversation">🗑️</span> Clear
       </button>
       <button 
-        onClick={onExport} 
+        onClick={handleExport} 
         className="control-button export-button" 
         title="Export conversation"
       >
