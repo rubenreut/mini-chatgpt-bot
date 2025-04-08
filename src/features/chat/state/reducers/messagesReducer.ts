@@ -22,11 +22,16 @@ export const messagesReducer = (
 ): MessagesState => {
   switch (action.type) {
     case ActionType.SET_MESSAGES:
+      console.log("SET_MESSAGES - Setting messages, count:", action.payload.length);
+      console.log("User messages:", action.payload.filter(m => m.role === 'user').length);
+      console.log("Assistant messages:", action.payload.filter(m => m.role === 'assistant').length);
       return { ...state, messages: action.payload };
       
     case ActionType.ADD_MESSAGE:
       const addedMessages = [...state.messages, action.payload];
-      console.log("Added message, now have", addedMessages.length, "messages");
+      console.log("ADD_MESSAGE - Added message, now have", addedMessages.length, "messages");
+      console.log("Added message role:", action.payload.role);
+      console.log("Added message content:", action.payload.content.substring(0, 30) + (action.payload.content.length > 30 ? '...' : ''));
       return { ...state, messages: addedMessages };
       
     case ActionType.SET_LOADING:

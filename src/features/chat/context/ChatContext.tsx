@@ -505,26 +505,50 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   
   // Create a new conversation
   const createNewConversation = useCallback(() => {
-    const newConvo = conversationCache.createNewConversation(state.systemPrompt);
+    // Create a system message
+    const systemMessage: Message = { 
+      role: 'system', 
+      content: state.systemPrompt || 'You are a helpful assistant.' 
+    };
     
+    // Reset the messages to only contain the system message
+    dispatch({ type: ActionType.SET_MESSAGES, payload: [systemMessage] });
+    
+    // Create a new conversation ID
+    const newId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+    
+    // Create a new conversation
+    const newConvo = {
+      id: newId,
+      title: 'New Conversation',
+      messages: [systemMessage],
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    };
+    
+    // Save to cache
+    conversationCache.saveConversation(newConvo);
+    conversationCache.setCurrentConversationId(newId);
+    
+    // Set the active conversation ID and title
     dispatch({ 
       type: ActionType.SET_ACTIVE_CONVERSATION,
       payload: {
-        id: newConvo.id,
-        messages: newConvo.messages,
-        title: newConvo.title,
+        id: newId,
+        messages: [systemMessage],
+        title: 'New Conversation',
         systemPrompt: state.systemPrompt
       }
     });
     
-    // Refresh conversation list
+    // Update conversations list
     dispatch({ 
       type: ActionType.UPDATE_CONVERSATIONS, 
       payload: conversationCache.getAllConversations() 
     });
     
-    return newConvo.id;
-  }, [state.systemPrompt, conversationCache]);
+    return newId;
+  }, [state.systemPrompt, dispatch, conversationCache]);
   
   // Delete a conversation
   const deleteConversation = useCallback((id: string) => {
@@ -779,80 +803,69 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
     }
 
-    // Add the user message to state with timestamp for stability
+    // CRITICAL: Add the user message to state WITH a timestamp for stability
     const userMessage: Message = { 
       role: 'user', 
-      content: userContent,
-      timestamp: Date.now() // Add timestamp for key stability
+      content: userContent.trim(),
+      timestamp: Date.now() // Add timestamp for stable keys
     };
     
-    console.log("Adding user message:", userMessage.content.substring(0, 30));
-    dispatch({ type: ActionType.ADD_MESSAGE, payload: userMessage });
+    console.log("Adding user message to state with existing messages:", state.messages.length);
+    
+    // Create a new messages array with the existing messages plus the new user message
+    const messagesWithUserInput = [...state.messages, userMessage];
+    dispatch({ type: ActionType.SET_MESSAGES, payload: messagesWithUserInput });
     dispatch({ type: ActionType.SET_LOADING, payload: true });
+    
+    console.log("New messages length after adding user message:", messagesWithUserInput.length);
+    console.log("User messages count:", messagesWithUserInput.filter(m => m.role === 'user').length);
 
-    // Create a new array with all messages including the new user message
-    const newMessages = [...state.messages, userMessage];
-    console.log("newMessages length:", newMessages.length);
-    console.log("User messages count:", newMessages.filter(m => m.role === 'user').length);
-
-    // If first message in the conversation, update title automatically
-    // CRITICAL: We keep the user message in the message list
+    // If it's the first user message, update the conversation title
     if (state.messages.filter(msg => msg.role === 'user').length === 0) {
-      const title = userText?.length > 30 
+      const title = userText.length > 30 
         ? userText.substring(0, 27) + '...' 
-        : userText ?? 'File upload';
+        : userText || 'New Conversation';
       
-      // Optimistically update title
       updateConversationTitle(title);
-      console.log("Updated conversation title:", title);
     }
 
     // Reset streaming state
     setStreamingResponse('');
     setIsStreaming(true);
-    console.log("Starting new message, current messages:", state.messages.length);
+    console.log("Starting new message, current messages:", messagesWithUserInput.length);
 
-    // Add an initial streaming message
-    const initialStreamingMessage: Message = { 
-      role: 'assistant', 
-      content: '' 
-    };
-    dispatch({ type: ActionType.ADD_MESSAGE, payload: initialStreamingMessage });
+    // CRITICAL: Don't add a blank assistant message yet - let the streaming create it
+    // This prevents duplicate messages from appearing
 
+    // Create a stable timestamp for the streaming message that won't change during updates
+    const streamingTimestamp = Date.now();
+    
     // Define streaming update handler
     const handleStreamUpdate = (chunk: string) => {
-      // Properly handle the streaming updates with a callback
       setStreamingResponse(prev => {
         const newContent = prev + chunk;
         
-        // Update the message with current streaming content
+        // Get all non-assistant messages as the base - use messagesWithUserInput to ensure stability
+        const nonAssistantMessages = messagesWithUserInput.filter(m => m.role !== 'assistant');
+        
+        // Create a new assistant message with the current streaming content
         const updatedMessage: Message = {
           role: 'assistant',
           content: newContent,
-          timestamp: Date.now() // Add timestamp for better key management
+          // IMPORTANT: Use the stable timestamp that doesn't change during updates
+          timestamp: streamingTimestamp 
         };
         
-        // PRESERVE ALL PREVIOUS MESSAGES including user messages
-        // We check how many messages are there and update only the last one (assistant)
-        const currentMessages = [...state.messages];
-        
-        // Check if the last message is an assistant message
-        if (currentMessages.length > 0 && 
-            currentMessages[currentMessages.length - 1].role === 'assistant') {
-          // Just update the last message's content
-          currentMessages[currentMessages.length - 1] = updatedMessage;
-        } else {
-          // Add the assistant message if there isn't one at the end
-          currentMessages.push(updatedMessage);
-        }
+        // Create a new messages array with all user & system messages plus the updated assistant message
+        const currentMessages = [...nonAssistantMessages, updatedMessage];
         
         // Validate message counts before dispatch
         const userCount = currentMessages.filter(m => m.role === 'user').length;
         const assistantCount = currentMessages.filter(m => m.role === 'assistant').length;
         
-        console.log(`Streaming update, user: ${userCount}, assistant: ${assistantCount}`);
-        console.log("Total messages to update:", currentMessages.length);
+        console.log(`Streaming update - User: ${userCount}, Assistant: ${assistantCount}, Total: ${currentMessages.length}`);
         
+        // Update the messages in state - overwrite completely to avoid race conditions
         dispatch({ 
           type: ActionType.SET_MESSAGES, 
           payload: currentMessages
@@ -864,7 +877,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // Use React Query mutation to send the message with streaming
     chatService.sendChatRequest({
-      messages: newMessages,
+      messages: messagesWithUserInput,
       model: state.model,
       stream: true,
       onUpdate: handleStreamUpdate

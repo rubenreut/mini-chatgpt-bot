@@ -14,12 +14,13 @@ interface ChatHistoryProps {
 const SimpleChatHistory: React.FC<ChatHistoryProps> = ({ messages }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Filter out system messages
+  // IMPORTANT: Only filter system messages, but keep ALL user and assistant messages
   const displayMessages = messages ? messages.filter(msg => msg.role !== 'system') : [];
   
   // Generate stable keys that don't cause remounting
   const getMessageKey = (message: MessageType, index: number) => {
-    return `${message.role}_${index}_${message.timestamp || 'static'}`;
+    // Use a more stable key format that won't change during renders
+    return `msg-${index}-${message.timestamp || Date.now()}-${message.role}`;
   };
   
   // Debug logging
@@ -39,11 +40,9 @@ const SimpleChatHistory: React.FC<ChatHistoryProps> = ({ messages }) => {
     });
   }, [messages, displayMessages]);
   
-  // Scroll to bottom when messages change
+  // Always scroll to bottom when messages change - remove timeout to ensure immediate scroll
   useEffect(() => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [displayMessages.length]);
 
   return (
@@ -68,10 +67,10 @@ const SimpleChatHistory: React.FC<ChatHistoryProps> = ({ messages }) => {
                 </div>
                 <div className={styles.messageContent}>
                   {isUser ? (
-                    message.content
+                    message.content || ''
                   ) : (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.content}
+                      {message.content || ''}
                     </ReactMarkdown>
                   )}
                 </div>

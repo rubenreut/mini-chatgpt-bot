@@ -27,9 +27,8 @@ import { CommandPalette } from "./context/commandPalette";
 import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
 
 // Lazily load non-critical components
-// Using a simple directly rendered component for better reliability
-// Using SimpleChatHistory instead of MessageList for more reliable rendering
-const MessageList = lazy(() => import("./features/chat/components/SimpleChatHistory"));
+// Using SimpleChatHistory for more reliable message rendering
+const SimpleChatHistory = lazy(() => import("./features/chat/components/SimpleChatHistory"));
 const ChatInput = lazy(() => import("./features/chat/components/ChatInput"));
 const SystemPromptEditor = lazy(() => import("./features/chat/components/SystemPromptEditor"));
 const ConversationTitle = lazy(() => import("./features/conversation/components/ConversationTitle"));
@@ -175,7 +174,7 @@ const App = (): React.ReactNode => {
         >
           <Suspense fallback={<LoadingSpinner text="Loading messages..." />}>
             <div className={styles.messagesWrapper} data-testid="messages-wrapper">
-              <MessageList messages={messages} />
+              <SimpleChatHistory messages={messages} />
               {/* Debug info - remove in production */}
               <div style={{ display: 'none' }}>
                 {messages.filter(m => m.role === 'user').length > 0 && 
