@@ -1,6 +1,19 @@
 import React from 'react';
+import { Conversation } from '../shared/types';
 
-const ConversationList = ({ conversations, activeId, onSelect, onDelete }) => {
+interface ConversationListProps {
+  conversations: Conversation[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+const ConversationList: React.FC<ConversationListProps> = ({ 
+  conversations, 
+  activeId, 
+  onSelect, 
+  onDelete 
+}) => {
   if (!conversations || conversations.length === 0) {
     return null;
   }
@@ -20,7 +33,9 @@ const ConversationList = ({ conversations, activeId, onSelect, onDelete }) => {
               aria-current={convo.id === activeId ? 'true' : 'false'}
             >
               <span className="conversation-title-preview">{convo.title || 'Untitled Conversation'}</span>
-              <span className="conversation-date">{new Date(convo.lastUpdated).toLocaleDateString()}</span>
+              <span className="conversation-date">
+                {convo.lastUpdated ? new Date(convo.lastUpdated).toLocaleDateString() : 'No date'}
+              </span>
             </button>
             <button 
               className="conversation-delete-button" 

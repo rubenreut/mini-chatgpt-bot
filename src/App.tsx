@@ -19,6 +19,7 @@ import Header from "./features/core/components/Header";
 import SystemPromptEditor from "./features/chat/components/SystemPromptEditor";
 import ConversationTitle from "./features/conversation/components/ConversationTitle";
 import ConversationList from "./features/conversation/components/ConversationList";
+import ErrorBoundary from "./utils/ErrorBoundary";
 
 // Import context hooks
 import { useChatContext } from "./features/chat/context/ChatContext";
@@ -71,63 +72,92 @@ const App = (): React.ReactNode => {
   return (
     <div className={`app-container ${showConversationList ? 'with-sidebar' : ''}`}>
       {showConversationList && (
-        <aside className="conversation-sidebar">
-          <div className="sidebar-header">
-            <h2>Conversations</h2>
+        <ErrorBoundary 
+          fallback={
+            <div className="error-sidebar">
+              <h3>Unable to load conversations</h3>
+              <button onClick={() => window.location.reload()}>
+                Reload
+              </button>
+            </div>
+          }
+        >
+          <aside className="conversation-sidebar">
+            <div className="sidebar-header">
+              <h2>Conversations</h2>
+              <button 
+                className="close-sidebar" 
+                onClick={handleToggleConversationList}
+                aria-label="Close conversation list"
+              >
+                ×
+              </button>
+            </div>
             <button 
-              className="close-sidebar" 
-              onClick={handleToggleConversationList}
-              aria-label="Close conversation list"
+              className="new-chat-button" 
+              onClick={createNewConversation}
             >
-              ×
+              <span className="plus-icon">+</span> New Chat
             </button>
-          </div>
-          <button 
-            className="new-chat-button" 
-            onClick={createNewConversation}
-          >
-            <span className="plus-icon">+</span> New Chat
-          </button>
-          <ConversationList 
-            conversations={conversations}
-            activeId={activeConversationId}
-            handleSelect={handleConversationSelect}
-            handleDelete={deleteConversation}
-          />
-        </aside>
+            <ConversationList 
+              conversations={conversations}
+              activeId={activeConversationId}
+              handleSelect={handleConversationSelect}
+              handleDelete={deleteConversation}
+            />
+          </aside>
+        </ErrorBoundary>
       )}
       
       <div className="chat-container">
-        <Header
-          darkMode={darkMode}
-          handleDarkModeToggle={toggleDarkMode}
-          selectedModel={model}
-          handleModelChange={setModel}
-          handleClearConversation={clearConversation}
-          handleExportConversation={exportConversation}
-          handleToggleConversations={handleToggleConversationList}
-          isShowingConversations={showConversationList}
-        />
+        <ErrorBoundary>
+          <Header
+            darkMode={darkMode}
+            handleDarkModeToggle={toggleDarkMode}
+            selectedModel={model}
+            handleModelChange={setModel}
+            handleClearConversation={clearConversation}
+            handleExportConversation={exportConversation}
+            handleToggleConversations={handleToggleConversationList}
+            isShowingConversations={showConversationList}
+          />
+        </ErrorBoundary>
         
-        <ConversationTitle 
-          title={conversationTitle}
-          handleTitleChange={updateConversationTitle}
-          handleNewConversation={createNewConversation}
-        />
+        <ErrorBoundary>
+          <ConversationTitle 
+            title={conversationTitle}
+            handleTitleChange={updateConversationTitle}
+            handleNewConversation={createNewConversation}
+          />
+        </ErrorBoundary>
         
-        <MessageList messages={messages} />
+        <ErrorBoundary 
+          fallback={(error, resetError) => (
+            <div className="messages-error">
+              <h3>Error displaying messages</h3>
+              <p>There was a problem rendering the chat messages.</p>
+              <button onClick={resetError}>Try Again</button>
+            </div>
+          )}
+        >
+          <MessageList messages={messages} />
+        </ErrorBoundary>
         
-        <ChatInput 
-          handleSendMessage={sendMessage} 
-          isLoading={loading} 
-        />
+        <ErrorBoundary>
+          <ChatInput 
+            handleSendMessage={sendMessage} 
+            isLoading={loading} 
+          />
+        </ErrorBoundary>
         
         {showSystemPromptEditor && (
-          <SystemPromptEditor 
-            systemPrompt={systemPrompt}
-            handleSave={updateSystemPrompt}
-            handleCancel={() => setShowSystemPromptEditor(false)}
-          />
+          <ErrorBoundary>
+            <SystemPromptEditor 
+              systemPrompt={systemPrompt}
+              handleSave={updateSystemPrompt}
+              handleCancel={() => setShowSystemPromptEditor(false)}
+            />
+          </ErrorBoundary>
         )}
       </div>
     </div>

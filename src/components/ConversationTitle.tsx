@@ -1,9 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const ConversationTitle = ({ title, onTitleChange, onNewConversation }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(title);
-  const inputRef = useRef(null);
+interface ConversationTitleProps {
+  title: string;
+  onTitleChange: (title: string) => void;
+  onNewConversation: () => void;
+}
+
+const ConversationTitle: React.FC<ConversationTitleProps> = ({ 
+  title, 
+  onTitleChange,
+  onNewConversation 
+}) => {
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editedTitle, setEditedTitle] = useState<string>(title);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -11,7 +21,12 @@ const ConversationTitle = ({ title, onTitleChange, onNewConversation }) => {
     }
   }, [isEditing]);
 
-  const handleSubmit = (e) => {
+  // Update local state when title prop changes
+  useEffect(() => {
+    setEditedTitle(title);
+  }, [title]);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newTitle = editedTitle.trim() || 'New Conversation';
     onTitleChange(newTitle);
@@ -39,7 +54,11 @@ const ConversationTitle = ({ title, onTitleChange, onNewConversation }) => {
         </form>
       ) : (
         <div className="title-display">
-          <h2 className="title-text" onClick={startEditing} title="Click to edit">
+          <h2 
+            className="title-text" 
+            onClick={startEditing} 
+            title="Click to edit"
+          >
             {title || 'New Conversation'}
           </h2>
           <button 

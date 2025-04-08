@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
 
-const SystemPromptEditor = ({ systemPrompt, onSave, onCancel }) => {
-  const [editedPrompt, setEditedPrompt] = useState(systemPrompt);
+interface SystemPromptEditorProps {
+  systemPrompt: string;
+  onSave: (prompt: string) => void;
+  onCancel: () => void;
+}
 
-  const handleSubmit = (e) => {
+const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({ 
+  systemPrompt, 
+  onSave, 
+  onCancel 
+}) => {
+  const [editedPrompt, setEditedPrompt] = useState<string>(systemPrompt);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editedPrompt.trim()) {
       onSave(editedPrompt.trim());
@@ -27,7 +37,11 @@ const SystemPromptEditor = ({ systemPrompt, onSave, onCancel }) => {
             autoFocus
           />
           <div className="prompt-editor-actions">
-            <button type="button" className="prompt-editor-cancel" onClick={onCancel}>
+            <button 
+              type="button" 
+              className="prompt-editor-cancel" 
+              onClick={onCancel}
+            >
               Cancel
             </button>
             <button 

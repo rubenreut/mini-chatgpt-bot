@@ -1,6 +1,14 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { FiSend, FiPaperclip, FiX } from 'react-icons/fi';
-import { MessageData } from '../../../shared/types';
+import React, { useState, useCallback, useEffect } from 'react';
+import { FiSend } from 'react-icons/fi';
+import { MessageData, FileWithPreview } from '../../../shared/types';
+import { useChatContext } from '../context/ChatContext';
+import { useFileProcessor } from '../../file-handling/hooks/useFileProcessor';
+import AnimatedPlusIcon from '../../../components/AnimatedPlusIcon';
+import FileAttachments from './FileAttachments';
+import FileUploadPanel from './FileUploadPanel';
+import ToolbarControls from './ToolbarControls';
+import MessageComposer from './MessageComposer';
+import { debounce } from '../../../utils/debounce';
 
 interface ChatInputProps {
   handleSendMessage: (messageData: MessageData) => Promise<void>;
@@ -12,50 +20,59 @@ const ChatInput = ({
   isLoading 
 }: ChatInputProps): React.ReactNode => {
   const [userInput, setUserInput] = useState<string>('');
-  const [isFileUploaderVisible, setIsFileUploaderVisible] = useState<boolean>(false);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showFileUploader, setShowFileUploader] = useState<boolean>(false);
+  const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([]);
+  
+  const { 
+    isListening, 
+    setIsListening, 
+    handleVoiceInput, 
+    voiceEnabled, 
+    toggleVoiceFeatures,
+    isSpeaking,
+    setShowSystemPromptEditor
+  } = useChatContext();
 
-  // Automatically resize the textarea as content grows
-  const handleTextareaResize = useCallback(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
+  const { processFiles } = useFileProcessor();
+
+  // Update input when voice recognition provides a transcript
+  useEffect(() => {
+    if (isListening) {
+      const handleTranscript = debounce((text: string) => {
+        setUserInput(text);
+      }, 300);
+      
+      window.handleVoiceTranscript = handleTranscript;
+      
+      return () => {
+        window.handleVoiceTranscript = undefined;
+      };
     }
-  }, []);
-
-  // Handle input changes and adjust textarea size
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
-    setUserInput(e.target.value);
-    handleTextareaResize();
-  };
-
-  // Handle key presses (Enter to send)
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmitMessage();
-    }
-  };
+  }, [isListening]);
 
   // Toggle file uploader visibility
-  const handleToggleFileUploader = (): void => {
-    setIsFileUploaderVisible(!isFileUploaderVisible);
-  };
+  const handleToggleFileUploader = useCallback((): void => {
+    setShowFileUploader(prev => !prev);
+  }, []);
 
   // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files);
-      setUploadedFiles(prev => [...prev, ...newFiles]);
-    }
-  };
+  const handleFileSelect = useCallback((fileList: FileList): void => {
+    const newFiles = Array.from(fileList);
+    processFiles(newFiles).then(processedFiles => {
+      setUploadedFiles(prev => [...prev, ...processedFiles]);
+    });
+    setShowFileUploader(false);
+  }, [processFiles]);
 
   // Remove a file from the uploaded list
-  const handleRemoveFile = (index: number): void => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  const handleRemoveFile = useCallback((fileId: string): void => {
+    setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+  }, []);
+
+  // Clear all files
+  const clearFiles = useCallback((): void => {
+    setUploadedFiles([]);
+  }, []);
 
   // Submit the message with any uploaded files
   const handleSubmitMessage = async (): Promise<void> => {
@@ -64,94 +81,78 @@ const ChatInput = ({
     try {
       await handleSendMessage({
         text: userInput.trim(),
-        files: uploadedFiles
+        files: uploadedFiles.map(item => item.file)
       });
       
       // Reset state after sending
       setUserInput('');
       setUploadedFiles([]);
-      setIsFileUploaderVisible(false);
-      
-      // Reset textarea height
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
+      setShowFileUploader(false);
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
   return (
-    <div className="chat-input-container">
-      {/* File preview area */}
-      {uploadedFiles.length > 0 && (
-        <div className="file-preview-area">
-          <h3>Attached Files:</h3>
-          <ul className="file-list">
-            {uploadedFiles.map((file, index) => (
-              <li key={index} className="file-item">
-                <span className="file-name">{file.name}</span>
-                <span className="file-size">({Math.round(file.size / 1024)} KB)</span>
-                <button 
-                  className="remove-file-button"
-                  onClick={() => handleRemoveFile(index)}
-                  aria-label={`Remove file ${file.name}`}
-                >
-                  <FiX />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* File uploader */}
-      {isFileUploaderVisible && (
-        <div className="file-uploader">
-          <input
-            type="file"
-            onChange={handleFileChange}
-            multiple
-            id="file-upload"
-            className="file-input"
+    <div className="input-area">
+      <ToolbarControls
+        onSystemPromptClick={() => setShowSystemPromptEditor(true)}
+        voiceEnabled={voiceEnabled}
+        toggleVoiceFeatures={toggleVoiceFeatures}
+        isListening={isListening}
+        setIsListening={setIsListening}
+        onVoiceTranscript={handleVoiceInput}
+      />
+      
+      {showFileUploader && <FileUploadPanel onFileSelect={handleFileSelect} />}
+      
+      <div className="input-container">
+        <div className="input-box">
+          <MessageComposer
+            userInput={userInput}
+            setUserInput={setUserInput}
+            onSendMessage={handleSubmitMessage}
+            disabled={isLoading || isListening || isSpeaking}
+            isListening={isListening}
+            placeholder={uploadedFiles.length > 0 
+              ? `Add a message about your ${uploadedFiles.length} file(s)...` 
+              : "Type your message here... (Shift+Enter for new line)"}
           />
-          <label htmlFor="file-upload" className="file-upload-label">
-            Select files or drop them here
-          </label>
+          
+          <button 
+            className={`upload-button ${showFileUploader ? 'active' : ''}`} 
+            onClick={handleToggleFileUploader}
+            title="Upload files"
+            aria-label="Upload files"
+          >
+            <AnimatedPlusIcon isActive={showFileUploader} />
+            {uploadedFiles.length > 0 && (
+              <span className="file-count">{uploadedFiles.length}</span>
+            )}
+          </button>
+          
+          <button 
+            className={`send-button ${(isLoading || isListening) ? 'disabled' : ''}`} 
+            onClick={handleSubmitMessage} 
+            disabled={isLoading || (!userInput.trim() && uploadedFiles.length === 0) || isListening || isSpeaking}
+          >
+            {isLoading ? (
+              <span className="loading-spinner"></span>
+            ) : (
+              <FiSend />
+            )}
+          </button>
         </div>
-      )}
-
-      {/* Message input area */}
-      <div className="input-area">
-        <button
-          className={`attachment-button ${isFileUploaderVisible ? 'active' : ''}`}
-          onClick={handleToggleFileUploader}
-          title="Attach files"
-          aria-label="Attach files"
-        >
-          <FiPaperclip />
-        </button>
-
-        <textarea
-          ref={textareaRef}
-          className="message-input"
-          value={userInput}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          rows={1}
-          disabled={isLoading}
-        />
-
-        <button
-          className="send-button"
-          onClick={handleSubmitMessage}
-          disabled={(!userInput.trim() && uploadedFiles.length === 0) || isLoading}
-          title="Send message"
-          aria-label="Send message"
-        >
-          {isLoading ? <div className="loader-small"></div> : <FiSend />}
-        </button>
+        
+        {isLoading && <div className="thinking-text">AI is thinking...</div>}
+        
+        {uploadedFiles.length > 0 && (
+          <FileAttachments 
+            files={uploadedFiles}
+            onRemoveFile={handleRemoveFile}
+            onClearAll={clearFiles}
+          />
+        )}
       </div>
     </div>
   );

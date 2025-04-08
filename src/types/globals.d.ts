@@ -20,7 +20,15 @@ interface SpeechRecognition extends EventTarget {
   abort(): void;
 }
 
-declare var SpeechRecognition: {
+interface SpeechRecognitionConstructor {
   prototype: SpeechRecognition;
   new(): SpeechRecognition;
-};
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    handleVoiceTranscript?: (text: string) => void;
+  }
+}

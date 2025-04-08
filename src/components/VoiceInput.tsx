@@ -1,11 +1,43 @@
 import React, { useState, useEffect } from 'react';
 
-// Use types from globals.d.ts for Web Speech API
-
 interface VoiceInputProps {
   onTranscript: (text: string) => void;
   isListening: boolean;
-  setIsListening: (isListening: boolean) => void;
+  setIsListening: (value: boolean) => void;
+}
+
+// Add missing types from browser API
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionError extends Event {
+  error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionError) => void;
+  onend: () => void;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognition;
+}
+
+// Declare global to make TypeScript happy
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
 }
 
 const VoiceInput: React.FC<VoiceInputProps> = ({ 
@@ -13,7 +45,8 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   isListening, 
   setIsListening 
 }) => {
-  // transcript state is used internally but may appear unused
+  // transcript state is used internally but linter sees it as unused
+  // eslint-disable-next-line no-unused-vars
   const [transcript, setTranscript] = useState<string>('');
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [error, setError] = useState<string>('');
@@ -22,46 +55,36 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        setError('Speech recognition is not available in this browser.');
-        return;
+      if (SpeechRecognition) {
+        const recognitionInstance = new SpeechRecognition();
+        
+        recognitionInstance.continuous = true;
+        recognitionInstance.interimResults = true;
+        recognitionInstance.lang = 'en-US';
+        
+        recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
+          let currentTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            currentTranscript += event.results[i][0].transcript;
+          }
+          setTranscript(currentTranscript);
+          onTranscript(currentTranscript);
+        };
+        
+        recognitionInstance.onerror = (event: SpeechRecognitionError) => {
+          console.error('Speech recognition error', event.error);
+          setError(`Error: ${event.error}`);
+          setIsListening(false);
+        };
+        
+        recognitionInstance.onend = () => {
+          if (isListening) {
+            recognitionInstance.start();
+          }
+        };
+        
+        setRecognition(recognitionInstance);
       }
-      
-      const recognitionInstance = new SpeechRecognition();
-      
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'en-US';
-      
-      recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
-        let currentTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          currentTranscript += event.results[i][0].transcript;
-        }
-        setTranscript(currentTranscript);
-        
-        // Call the provided callback
-        onTranscript(currentTranscript);
-        
-        // Also call the global handler if available (for compatibility)
-        if (window.handleVoiceTranscript) {
-          window.handleVoiceTranscript(currentTranscript);
-        }
-      };
-      
-      recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error', event.error);
-        setError(`Error: ${event.error}`);
-        setIsListening(false);
-      };
-      
-      recognitionInstance.onend = () => {
-        if (isListening) {
-          recognitionInstance.start();
-        }
-      };
-      
-      setRecognition(recognitionInstance);
     } else {
       setError('Speech recognition is not supported in this browser.');
     }

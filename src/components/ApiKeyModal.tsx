@@ -1,6 +1,18 @@
 import React from 'react';
 
-const ApiKeyModal = ({ apiKey, setApiKey, onSubmit, showModal }) => {
+interface ApiKeyModalProps {
+  apiKey: string;
+  setApiKey: (key: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  showModal: boolean;
+}
+
+const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ 
+  apiKey, 
+  setApiKey, 
+  onSubmit, 
+  showModal 
+}) => {
   if (!showModal) return null;
   
   return (
@@ -18,7 +30,11 @@ const ApiKeyModal = ({ apiKey, setApiKey, onSubmit, showModal }) => {
             autoComplete="off"
             aria-label="OpenAI API Key"
           />
-          <button type="submit" className="api-key-button" disabled={!apiKey.trim().startsWith('sk-')}>
+          <button 
+            type="submit" 
+            className="api-key-button" 
+            disabled={!apiKey.trim().startsWith('sk-')}
+          >
             Save API Key
           </button>
         </form>

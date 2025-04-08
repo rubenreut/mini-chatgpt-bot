@@ -1,13 +1,29 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { VariableSizeList as List } from 'react-window';
+import { VariableSizeList as List, ListChildComponentProps } from 'react-window';
 import Message from './Message';
+import { Message as MessageType } from '../shared/types';
 
-const MessageList = ({ messages }) => {
-  const messagesEndRef = useRef(null);
-  const listRef = useRef(null);
-  const [listHeight, setListHeight] = useState(window.innerHeight - 200); // Approximate space for input and header
-  const [messageSizes, setMessageSizes] = useState({});
-  const containerRef = useRef(null);
+interface MessageListProps {
+  messages: MessageType[];
+}
+
+interface MessageSizes {
+  [key: number]: number;
+}
+
+interface MessageItemComponentProps {
+  index: number;
+  style: React.CSSProperties;
+  message: MessageType;
+  onHeightChange: (index: number, height: number) => void;
+}
+
+const MessageList: React.FC<MessageListProps> = ({ messages }) => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<List>(null);
+  const [listHeight, setListHeight] = useState<number>(window.innerHeight - 200); // Approximate space for input and header
+  const [messageSizes, setMessageSizes] = useState<MessageSizes>({});
+  const containerRef = useRef<HTMLDivElement>(null);
   const filteredMessages = messages.filter((msg) => msg.role !== "system");
   
   // Handle window resize
@@ -40,7 +56,7 @@ const MessageList = ({ messages }) => {
   }, [messages, scrollToBottom]);
   
   // Record message size after render
-  const setMessageSize = useCallback((index, size) => {
+  const setMessageSize = useCallback((index: number, size: number) => {
     setMessageSizes(prev => {
       if (prev[index] === size) return prev;
       return { ...prev, [index]: size };
@@ -48,13 +64,13 @@ const MessageList = ({ messages }) => {
   }, []);
   
   // Get item size for virtualized list
-  const getItemSize = useCallback(index => {
+  const getItemSize = useCallback((index: number) => {
     return messageSizes[index] || 100; // Default height
   }, [messageSizes]);
   
   // Create a separate component for message items to properly use hooks
-  const MessageItemComponent = React.memo(({ index, style, message, onHeightChange }) => {
-    const messageRef = useRef(null);
+  const MessageItemComponent = React.memo<MessageItemComponentProps>(({ index, style, message, onHeightChange }) => {
+    const messageRef = useRef<HTMLDivElement>(null);
     
     // Measure message height after render
     useEffect(() => {
@@ -74,7 +90,7 @@ const MessageList = ({ messages }) => {
   });
   
   // Function to render message items using the component
-  const MessageItem = useCallback(({ index, style }) => {
+  const MessageItem = useCallback(({ index, style }: ListChildComponentProps) => {
     return (
       <MessageItemComponent 
         index={index}

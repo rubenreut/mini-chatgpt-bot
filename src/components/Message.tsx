@@ -2,9 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Prism from 'prismjs';
+import { Message as MessageType } from '../shared/types';
+import { ReactMarkdownOptions } from 'react-markdown/lib/react-markdown';
 
-const Message = ({ message }) => {
-  const codeRef = useRef(null);
+interface MessageProps {
+  message: MessageType;
+}
+
+const Message: React.FC<MessageProps> = ({ message }) => {
+  const codeRef = useRef<HTMLDivElement>(null);
 
   // Highlight code blocks when message content changes
   useEffect(() => {
@@ -13,7 +19,7 @@ const Message = ({ message }) => {
     }
   }, [message.content, message.role]);
 
-  const renderContent = (content) => {
+  const renderContent = (content: string) => {
     return (
       <div ref={codeRef}>
         <ReactMarkdown

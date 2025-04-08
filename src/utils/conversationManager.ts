@@ -1,13 +1,13 @@
 /**
  * Utility for managing conversation data in local storage
  */
-import { Message, Conversation } from '../types';
+import { Conversation, Message } from '../shared/types';
 
 class ConversationManager {
   private storageKey: string;
   private currentConversationKey: string;
   private maxConversations: number;
-  
+
   constructor() {
     this.storageKey = 'mini_chatgpt_conversations';
     this.currentConversationKey = 'mini_chatgpt_current_conversation';
@@ -47,7 +47,7 @@ class ConversationManager {
   }
 
   // Save a new conversation or update an existing one
-  saveConversation(conversation: Conversation): string {
+  saveConversation(conversation: Conversation): string | null {
     try {
       const conversations = this.getAllConversations();
       const index = conversations.findIndex(c => c.id === conversation.id);
@@ -63,7 +63,7 @@ class ConversationManager {
         conversations.unshift({
           ...conversation,
           id: conversation.id || this._generateId(),
-          timestamp: Date.now(),
+          createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
         });
         
@@ -77,7 +77,7 @@ class ConversationManager {
       return conversations[index >= 0 ? index : 0].id;
     } catch (error) {
       console.error('Error saving conversation:', error);
-      return '';
+      return null;
     }
   }
 
@@ -108,13 +108,14 @@ class ConversationManager {
       title: 'New Conversation',
       messages: [
         { role: 'system', content: systemPrompt }
-      ],
-      systemPrompt,
-      timestamp: Date.now()
+      ]
     };
     
     const id = this.saveConversation(newConversation);
-    this.setCurrentConversationId(id);
+    if (id) {
+      this.setCurrentConversationId(id);
+      return { ...newConversation, id };
+    }
     return newConversation;
   }
 
@@ -143,9 +144,6 @@ class ConversationManager {
       } else {
         conversation.messages.unshift({ role: 'system', content: systemPrompt });
       }
-      
-      // Save systemPrompt as a separate property too
-      conversation.systemPrompt = systemPrompt;
       
       this.saveConversation(conversation);
       return true;

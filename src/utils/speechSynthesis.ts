@@ -17,7 +17,7 @@ class SpeechSynthesisHelper {
   private utterance: SpeechSynthesisUtterance | null;
   private voiceMap: Map<string, SpeechSynthesisVoice>;
   private preferredVoice: SpeechSynthesisVoice | null;
-  
+
   constructor() {
     this.synth = window.speechSynthesis;
     this.utterance = null;

@@ -1,7 +1,16 @@
 import React from 'react';
+import { Model } from '../shared/types';
 
-const ModelSelector = ({ selectedModel, onModelChange }) => {
-  const models = [
+interface ModelSelectorProps {
+  selectedModel: string;
+  onModelChange: (model: string) => void;
+}
+
+const ModelSelector: React.FC<ModelSelectorProps> = ({ 
+  selectedModel, 
+  onModelChange 
+}) => {
+  const models: Model[] = [
     { id: 'gpt-4', name: 'GPT-4 (Powerful)' },
     { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (Fast)' },
   ];

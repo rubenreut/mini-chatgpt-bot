@@ -3,12 +3,24 @@ import VoiceInput from './VoiceInput';
 import AnimatedPlusIcon from './AnimatedPlusIcon';
 import { useChatContext } from '../context/ChatContext';
 import { debounce } from '../utils/debounce';
+import { MessageData } from '../shared/types';
 
-const ChatInput = ({ onSendMessage, loading }) => {
-  const [userInput, setUserInput] = useState('');
-  const [showFileUploader, setShowFileUploader] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-  const textareaRef = useRef(null);
+interface ChatInputProps {
+  onSendMessage: (messageData: MessageData) => void;
+  loading: boolean;
+}
+
+interface ProcessedFile extends File {
+  fileName: string;
+  lineCount: number | null;
+  id: string;
+}
+
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, loading }) => {
+  const [userInput, setUserInput] = useState<string>('');
+  const [showFileUploader, setShowFileUploader] = useState<boolean>(false);
+  const [uploadedFiles, setUploadedFiles] = useState<ProcessedFile[]>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { 
     isListening, 
     setIsListening, 
@@ -37,7 +49,7 @@ const ChatInput = ({ onSendMessage, loading }) => {
   }, [isListening]);
 
   // Handle Enter key (with Shift+Enter support for new lines)
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -47,20 +59,20 @@ const ChatInput = ({ onSendMessage, loading }) => {
   // Update input when voice recognition provides a transcript
   useEffect(() => {
     if (isListening) {
-      const handleTranscript = debounce((text) => {
+      const handleTranscript = debounce((text: string) => {
         setUserInput(text);
       }, 300);
       
       window.handleVoiceTranscript = handleTranscript;
       
       return () => {
-        delete window.handleVoiceTranscript;
+        window.handleVoiceTranscript = undefined;
       };
     }
   }, [isListening]);
 
   // Improved file upload with optimized processing and web workers if available
-  const handleFileUpload = (newFiles) => {
+  const handleFileUpload = (newFiles: File[]) => {
     // Show file uploader and process files asynchronously
     const processFiles = async () => {
       // Process files in batches using Promise.all
@@ -72,16 +84,16 @@ const ChatInput = ({ onSendMessage, loading }) => {
         batches.push(newFiles.slice(i, i + batchSize));
       }
       
-      const processedFiles = [];
+      const processedFiles: ProcessedFile[] = [];
       
       // Process each batch sequentially to avoid overwhelming the browser
       for (const batch of batches) {
         const batchResults = await Promise.all(batch.map(async (file) => {
           // Get just the filename without path
-          const fileName = file.name.split('\\').pop().split('/').pop();
+          const fileName = file.name.split('\\').pop()?.split('/').pop() || file.name;
           
           // Calculate lines of code for text files
-          let lineCount = null;
+          let lineCount: number | null = null;
           
           if (
             file.type.startsWith('text/') || 
@@ -90,13 +102,17 @@ const ChatInput = ({ onSendMessage, loading }) => {
             file.name.endsWith('.txt') ||
             file.name.endsWith('.csv')
           ) {
-            lineCount = await new Promise(resolve => {
+            lineCount = await new Promise<number | null>(resolve => {
               const reader = new FileReader();
               reader.onload = (e) => {
                 // Use a more efficient way to count lines
-                const content = e.target.result;
-                const lines = (content.match(/\n/g) || []).length + 1;
-                resolve(lines);
+                const content = e.target?.result as string;
+                if (content) {
+                  const lines = (content.match(/\n/g) || []).length + 1;
+                  resolve(lines);
+                } else {
+                  resolve(null);
+                }
               };
               reader.onerror = () => resolve(null);
               
@@ -114,7 +130,7 @@ const ChatInput = ({ onSendMessage, loading }) => {
             fileName,
             lineCount,
             id: Date.now() + Math.random().toString(36).substr(2, 9) // Unique ID
-          };
+          } as ProcessedFile;
         }));
         
         processedFiles.push(...batchResults);
@@ -146,7 +162,7 @@ const ChatInput = ({ onSendMessage, loading }) => {
     if ((!userInput.trim() && uploadedFiles.length === 0) || loading) return;
     
     // Create FormData for files if needed
-    let messageData = {
+    const messageData: MessageData = {
       text: userInput,
       files: uploadedFiles
     };
@@ -196,7 +212,7 @@ const ChatInput = ({ onSendMessage, loading }) => {
       
       {showFileUploader && (
         <div className="upload-options-menu">
-          <div className="upload-option" onClick={() => document.getElementById('file-input').click()}>
+          <div className="upload-option" onClick={() => document.getElementById('file-input')?.click()}>
             <span role="img" aria-hidden="true" style={{ fontSize: '1.4rem' }}>📄</span>
             <span>Upload a file</span>
             <input 

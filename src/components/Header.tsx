@@ -3,7 +3,18 @@ import ThemeToggle from './ThemeToggle';
 import ModelSelector from './ModelSelector';
 import ConversationControls from './ConversationControls';
 
-const Header = ({ 
+interface HeaderProps {
+  darkMode: boolean;
+  toggleDarkMode: () => void;
+  selectedModel: string;
+  onModelChange: (model: string) => void;
+  onClearConversation: () => void;
+  onExportConversation: () => void;
+  onToggleConversations: () => void;
+  showingConversations: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ 
   darkMode, 
   toggleDarkMode, 
   selectedModel, 
