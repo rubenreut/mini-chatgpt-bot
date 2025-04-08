@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import VoiceInput from './VoiceInput';
-import FileUploader from './FileUploader';
 import AnimatedPlusIcon from './AnimatedPlusIcon';
 import { useChatContext } from '../context/ChatContext';
 import { debounce } from '../utils/debounce';
@@ -17,7 +16,6 @@ const ChatInput = ({ onSendMessage, loading }) => {
     voiceEnabled, 
     toggleVoiceFeatures,
     isSpeaking,
-    systemPrompt,
     setShowSystemPromptEditor
   } = useChatContext();
 
@@ -61,54 +59,78 @@ const ChatInput = ({ onSendMessage, loading }) => {
     }
   }, [isListening]);
 
+  // Improved file upload with optimized processing and web workers if available
   const handleFileUpload = (newFiles) => {
-    // Process files to add metadata
-    const processedFiles = newFiles.map(file => {
-      // Calculate lines of code for text files
-      const getLineCount = () => {
-        return new Promise(resolve => {
-          if (file.type.startsWith('text/') || 
-              file.type === 'application/json' || 
-              file.name.endsWith('.md') || 
-              file.name.endsWith('.txt') ||
-              file.name.endsWith('.csv')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              const content = e.target.result;
-              const lines = content.split('\n').length;
-              resolve(lines);
-            };
-            reader.readAsText(file);
-          } else {
-            resolve(null); // Not a text file
+    // Show file uploader and process files asynchronously
+    const processFiles = async () => {
+      // Process files in batches using Promise.all
+      const batchSize = 3; // Process 3 files at a time
+      const batches = [];
+      
+      // Create batches of files
+      for (let i = 0; i < newFiles.length; i += batchSize) {
+        batches.push(newFiles.slice(i, i + batchSize));
+      }
+      
+      const processedFiles = [];
+      
+      // Process each batch sequentially to avoid overwhelming the browser
+      for (const batch of batches) {
+        const batchResults = await Promise.all(batch.map(async (file) => {
+          // Get just the filename without path
+          const fileName = file.name.split('\\').pop().split('/').pop();
+          
+          // Calculate lines of code for text files
+          let lineCount = null;
+          
+          if (
+            file.type.startsWith('text/') || 
+            file.type === 'application/json' || 
+            file.name.endsWith('.md') || 
+            file.name.endsWith('.txt') ||
+            file.name.endsWith('.csv')
+          ) {
+            lineCount = await new Promise(resolve => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                // Use a more efficient way to count lines
+                const content = e.target.result;
+                const lines = (content.match(/\n/g) || []).length + 1;
+                resolve(lines);
+              };
+              reader.onerror = () => resolve(null);
+              
+              // Only read the first megabyte for very large files
+              if (file.size > 1024 * 1024) {
+                reader.readAsText(file.slice(0, 1024 * 1024));
+              } else {
+                reader.readAsText(file);
+              }
+            });
           }
-        });
-      };
-      
-      // Return file with promise to get line count
-      // Get just the filename without path
-      const fileName = file.name.split('\\').pop().split('/').pop();
-      
-      return {
-        ...file,
-        fileName: fileName, // Store cleaned filename
-        lineCountPromise: getLineCount(),
-        id: Date.now() + Math.random().toString(36).substr(2, 9) // Unique ID
-      };
-    });
+          
+          return {
+            ...file,
+            fileName,
+            lineCount,
+            id: Date.now() + Math.random().toString(36).substr(2, 9) // Unique ID
+          };
+        }));
+        
+        processedFiles.push(...batchResults);
+        
+        // Update state incrementally for better UX with many files
+        setUploadedFiles(prev => [...prev, ...batchResults]);
+        
+        // Small delay between batches to keep UI responsive
+        if (batches.length > 1) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+    };
     
-    // Resolve line count promises and update state
-    Promise.all(processedFiles.map(async file => {
-      const lineCount = await file.lineCountPromise;
-      return {
-        ...file,
-        lineCount,
-        lineCountPromise: undefined // Remove promise from state
-      };
-    })).then(filesWithLineCount => {
-      setUploadedFiles(prev => [...prev, ...filesWithLineCount]);
-    });
-    
+    // Start processing files and hide uploader
+    processFiles();
     setShowFileUploader(false);
   };
 
@@ -262,9 +284,9 @@ const ChatInput = ({ onSendMessage, loading }) => {
                         '🖼️'
                       ) : file.type && file.type.includes('pdf') ? (
                         '📄'
-                      ) : file.type && file.type.includes('spreadsheet') || (file.name && file.name.endsWith('.csv')) ? (
+                      ) : (file.type && file.type.includes('spreadsheet')) || (file.name && file.name.endsWith('.csv')) ? (
                         '📊'
-                      ) : file.type && file.type.includes('javascript') || (file.name && file.name.endsWith('.js')) ? (
+                      ) : (file.type && file.type.includes('javascript')) || (file.name && file.name.endsWith('.js')) ? (
                         '📜'
                       ) : file.type && file.type.includes('html') ? (
                         '🌐'

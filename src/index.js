@@ -5,17 +5,20 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ThemeProvider } from './context/ThemeContext';
 import { ChatProvider } from './context/ChatContext';
+import QueryProvider from './providers/QueryProvider';
 import ErrorBoundary from './utils/ErrorBoundary';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <ThemeProvider>
-        <ChatProvider>
-          <App />
-        </ChatProvider>
-      </ThemeProvider>
+      <QueryProvider>
+        <ThemeProvider>
+          <ChatProvider>
+            <App />
+          </ChatProvider>
+        </ThemeProvider>
+      </QueryProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

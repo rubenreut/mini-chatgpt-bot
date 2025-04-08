@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useReducer } from 'react';
 import axios from 'axios';
 import conversationManager from '../utils/conversationManager';
 import speechSynthesis from '../utils/speechSynthesis';
@@ -7,30 +7,124 @@ const ChatContext = createContext();
 
 export const useChatContext = () => useContext(ChatContext);
 
+// Action types for reducer
+const ACTIONS = {
+  SET_MESSAGES: 'SET_MESSAGES',
+  ADD_MESSAGE: 'ADD_MESSAGE',
+  SET_LOADING: 'SET_LOADING',
+  SET_MODEL: 'SET_MODEL',
+  TOGGLE_API_KEY_MODAL: 'TOGGLE_API_KEY_MODAL',
+  SET_API_KEY: 'SET_API_KEY',
+  SET_CONVERSATION_LIST_VISIBILITY: 'SET_CONVERSATION_LIST_VISIBILITY',
+  SET_ACTIVE_CONVERSATION: 'SET_ACTIVE_CONVERSATION',
+  UPDATE_CONVERSATIONS: 'UPDATE_CONVERSATIONS',
+  SET_CONVERSATION_TITLE: 'SET_CONVERSATION_TITLE',
+  TOGGLE_SYSTEM_PROMPT_EDITOR: 'TOGGLE_SYSTEM_PROMPT_EDITOR',
+  SET_SYSTEM_PROMPT: 'SET_SYSTEM_PROMPT',
+  TOGGLE_VOICE_ENABLED: 'TOGGLE_VOICE_ENABLED',
+  SET_LISTENING: 'SET_LISTENING',
+  SET_SPEAKING: 'SET_SPEAKING'
+};
+
+// Initial state
+const initialState = {
+  messages: [{ role: 'system', content: 'You are a helpful assistant.' }],
+  loading: false,
+  apiKey: '',
+  showApiKeyModal: false,
+  model: 'gpt-4',
+  conversations: [],
+  activeConversationId: null,
+  showConversationList: false,
+  conversationTitle: 'New Conversation',
+  systemPrompt: 'You are a helpful assistant.',
+  showSystemPromptEditor: false,
+  voiceEnabled: false,
+  isListening: false,
+  isSpeaking: false
+};
+
+// Reducer function
+function chatReducer(state, action) {
+  switch (action.type) {
+    case ACTIONS.SET_MESSAGES:
+      return { ...state, messages: action.payload };
+    
+    case ACTIONS.ADD_MESSAGE:
+      return { ...state, messages: [...state.messages, action.payload] };
+    
+    case ACTIONS.SET_LOADING:
+      return { ...state, loading: action.payload };
+    
+    case ACTIONS.SET_MODEL:
+      return { ...state, model: action.payload };
+    
+    case ACTIONS.TOGGLE_API_KEY_MODAL:
+      return { ...state, showApiKeyModal: action.payload };
+    
+    case ACTIONS.SET_API_KEY:
+      return { ...state, apiKey: action.payload };
+    
+    case ACTIONS.SET_CONVERSATION_LIST_VISIBILITY:
+      return { ...state, showConversationList: action.payload };
+    
+    case ACTIONS.SET_ACTIVE_CONVERSATION:
+      return { 
+        ...state, 
+        activeConversationId: action.payload.id, 
+        messages: action.payload.messages,
+        conversationTitle: action.payload.title,
+        systemPrompt: action.payload.systemPrompt
+      };
+    
+    case ACTIONS.UPDATE_CONVERSATIONS:
+      return { ...state, conversations: action.payload };
+    
+    case ACTIONS.SET_CONVERSATION_TITLE:
+      return { ...state, conversationTitle: action.payload };
+    
+    case ACTIONS.TOGGLE_SYSTEM_PROMPT_EDITOR:
+      return { ...state, showSystemPromptEditor: action.payload };
+    
+    case ACTIONS.SET_SYSTEM_PROMPT:
+      // Update system prompt and messages
+      const hasSystem = state.messages.some(msg => msg.role === 'system');
+      let updatedMessages;
+      
+      if (hasSystem) {
+        updatedMessages = state.messages.map(msg => 
+          msg.role === 'system' ? { ...msg, content: action.payload } : msg
+        );
+      } else {
+        updatedMessages = [{ role: 'system', content: action.payload }, ...state.messages];
+      }
+      
+      return { 
+        ...state, 
+        systemPrompt: action.payload,
+        messages: updatedMessages
+      };
+    
+    case ACTIONS.TOGGLE_VOICE_ENABLED:
+      return { ...state, voiceEnabled: action.payload };
+    
+    case ACTIONS.SET_LISTENING:
+      return { ...state, isListening: action.payload };
+    
+    case ACTIONS.SET_SPEAKING:
+      return { ...state, isSpeaking: action.payload };
+    
+    default:
+      return state;
+  }
+}
+
 export const ChatProvider = ({ children }) => {
-  // Core state
-  const [messages, setMessages] = useState([
-    { role: 'system', content: 'You are a helpful assistant.' }
-  ]);
-  const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState(process.env.REACT_APP_OPENAI_API_KEY || '');
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [model, setModel] = useState('gpt-4');
-  
-  // Conversation management
-  const [conversations, setConversations] = useState([]);
-  const [activeConversationId, setActiveConversationId] = useState(null);
-  const [showConversationList, setShowConversationList] = useState(false);
-  const [conversationTitle, setConversationTitle] = useState('New Conversation');
-  
-  // UI State
-  const [showSystemPromptEditor, setShowSystemPromptEditor] = useState(false);
-  const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.');
-  
-  // Voice features
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  // Use reducer for state management
+  const [state, dispatch] = useReducer(chatReducer, {
+    ...initialState,
+    showApiKeyModal: !localStorage.getItem('openai_api_key')
+  });
   
   // Initialize speech synthesis
   useEffect(() => {
@@ -43,158 +137,163 @@ export const ChatProvider = ({ children }) => {
   useEffect(() => {
     const savedModel = localStorage.getItem('selected_model');
     if (savedModel) {
-      setModel(savedModel);
+      dispatch({ type: ACTIONS.SET_MODEL, payload: savedModel });
+    }
+    
+    const savedApiKey = localStorage.getItem('openai_api_key');
+    if (savedApiKey) {
+      dispatch({ type: ACTIONS.SET_API_KEY, payload: savedApiKey });
     }
     
     const voiceEnabledSetting = localStorage.getItem('voice_enabled');
     if (voiceEnabledSetting !== null) {
-      setVoiceEnabled(voiceEnabledSetting === 'true');
+      dispatch({ type: ACTIONS.TOGGLE_VOICE_ENABLED, payload: voiceEnabledSetting === 'true' });
     }
   }, []);
   
   // Load conversations and set active conversation
   useEffect(() => {
     const allConversations = conversationManager.getAllConversations();
-    setConversations(allConversations);
+    dispatch({ type: ACTIONS.UPDATE_CONVERSATIONS, payload: allConversations });
     
     const currentId = conversationManager.getCurrentConversationId();
     if (currentId && allConversations.some(c => c.id === currentId)) {
-      setActiveConversationId(currentId);
       loadConversation(currentId);
     } else if (allConversations.length > 0) {
       // If no current ID or it's invalid, use the most recent conversation
-      setActiveConversationId(allConversations[0].id);
       loadConversation(allConversations[0].id);
     } else {
       // If no conversations exist, create a new one
       createNewConversation();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   // Save model preference to localStorage
   useEffect(() => {
-    localStorage.setItem('selected_model', model);
-  }, [model]);
+    localStorage.setItem('selected_model', state.model);
+  }, [state.model]);
   
   // Save voice preference to localStorage
   useEffect(() => {
-    localStorage.setItem('voice_enabled', voiceEnabled.toString());
-  }, [voiceEnabled]);
+    localStorage.setItem('voice_enabled', state.voiceEnabled.toString());
+  }, [state.voiceEnabled]);
   
   // Load a specific conversation
   const loadConversation = useCallback((id) => {
     const conversation = conversationManager.getConversation(id);
     if (conversation) {
-      setMessages(conversation.messages);
-      setConversationTitle(conversation.title);
-      
       // Get system prompt
       const systemMsg = conversation.messages.find(msg => msg.role === 'system');
-      if (systemMsg) {
-        setSystemPrompt(systemMsg.content);
-      }
+      const systemPromptContent = systemMsg ? systemMsg.content : state.systemPrompt;
       
-      setActiveConversationId(id);
+      dispatch({ 
+        type: ACTIONS.SET_ACTIVE_CONVERSATION,
+        payload: {
+          id,
+          messages: conversation.messages,
+          title: conversation.title,
+          systemPrompt: systemPromptContent
+        }
+      });
+      
       conversationManager.setCurrentConversationId(id);
     }
-  }, []);
+  }, [state.systemPrompt]);
   
   // Create a new conversation
   const createNewConversation = useCallback(() => {
-    const newConvo = conversationManager.createNewConversation(systemPrompt);
-    setMessages(newConvo.messages);
-    setConversationTitle(newConvo.title);
-    setActiveConversationId(newConvo.id);
+    const newConvo = conversationManager.createNewConversation(state.systemPrompt);
+    
+    dispatch({ 
+      type: ACTIONS.SET_ACTIVE_CONVERSATION,
+      payload: {
+        id: newConvo.id,
+        messages: newConvo.messages,
+        title: newConvo.title,
+        systemPrompt: state.systemPrompt
+      }
+    });
     
     // Refresh conversation list
-    setConversations(conversationManager.getAllConversations());
+    dispatch({ 
+      type: ACTIONS.UPDATE_CONVERSATIONS, 
+      payload: conversationManager.getAllConversations() 
+    });
+    
     return newConvo.id;
-  }, [systemPrompt]);
+  }, [state.systemPrompt]);
   
   // Delete a conversation
   const deleteConversation = useCallback((id) => {
     conversationManager.deleteConversation(id);
-    setConversations(conversationManager.getAllConversations());
+    const allConversations = conversationManager.getAllConversations();
+    dispatch({ type: ACTIONS.UPDATE_CONVERSATIONS, payload: allConversations });
     
-    if (id === activeConversationId) {
-      const remainingConversations = conversationManager.getAllConversations();
-      if (remainingConversations.length > 0) {
-        loadConversation(remainingConversations[0].id);
+    if (id === state.activeConversationId) {
+      if (allConversations.length > 0) {
+        loadConversation(allConversations[0].id);
       } else {
         createNewConversation();
       }
     }
-  }, [activeConversationId, loadConversation, createNewConversation]);
+  }, [state.activeConversationId, loadConversation, createNewConversation]);
   
   // Update conversation title
   const updateConversationTitle = useCallback((title) => {
-    if (activeConversationId) {
-      conversationManager.updateTitle(activeConversationId, title);
-      setConversationTitle(title);
-      setConversations(conversationManager.getAllConversations());
+    if (state.activeConversationId) {
+      conversationManager.updateTitle(state.activeConversationId, title);
+      dispatch({ type: ACTIONS.SET_CONVERSATION_TITLE, payload: title });
+      dispatch({ 
+        type: ACTIONS.UPDATE_CONVERSATIONS, 
+        payload: conversationManager.getAllConversations() 
+      });
     }
-  }, [activeConversationId]);
+  }, [state.activeConversationId]);
   
   // Update system prompt
   const updateSystemPrompt = useCallback((prompt) => {
-    setSystemPrompt(prompt);
-    
-    // Update messages state
-    setMessages(prevMessages => {
-      const hasSystem = prevMessages.some(msg => msg.role === 'system');
-      if (hasSystem) {
-        return prevMessages.map(msg => 
-          msg.role === 'system' ? { ...msg, content: prompt } : msg
-        );
-      } else {
-        return [{ role: 'system', content: prompt }, ...prevMessages];
-      }
-    });
+    dispatch({ type: ACTIONS.SET_SYSTEM_PROMPT, payload: prompt });
     
     // Update in storage if we have an active conversation
-    if (activeConversationId) {
-      conversationManager.updateSystemPrompt(activeConversationId, prompt);
+    if (state.activeConversationId) {
+      conversationManager.updateSystemPrompt(state.activeConversationId, prompt);
     }
     
-    setShowSystemPromptEditor(false);
-  }, [activeConversationId]);
+    dispatch({ type: ACTIONS.TOGGLE_SYSTEM_PROMPT_EDITOR, payload: false });
+  }, [state.activeConversationId]);
   
   // Save current messages to active conversation
   const saveCurrentConversation = useCallback(() => {
-    if (!activeConversationId || messages.length <= 1) return;
+    if (!state.activeConversationId || state.messages.length <= 1) return;
     
     const conversation = {
-      id: activeConversationId,
-      title: conversationTitle,
-      messages
+      id: state.activeConversationId,
+      title: state.conversationTitle,
+      messages: state.messages
     };
     
     conversationManager.saveConversation(conversation);
-    setConversations(conversationManager.getAllConversations());
-  }, [activeConversationId, conversationTitle, messages]);
+    dispatch({ 
+      type: ACTIONS.UPDATE_CONVERSATIONS, 
+      payload: conversationManager.getAllConversations() 
+    });
+  }, [state.activeConversationId, state.conversationTitle, state.messages]);
   
   // Auto-save on messages change
   useEffect(() => {
-    if (messages.length > 1 && activeConversationId) {
+    if (state.messages.length > 1 && state.activeConversationId) {
       saveCurrentConversation();
     }
-  }, [messages, saveCurrentConversation, activeConversationId]);
-  
-  // Voice input handler
-  const handleVoiceInput = useCallback((transcript) => {
-    if (transcript) {
-      sendMessage(transcript);
-      setIsListening(false);
-    }
-  }, []);
+  }, [state.messages, saveCurrentConversation, state.activeConversationId]);
   
   // Text-to-speech for assistant responses
   useEffect(() => {
-    if (!voiceEnabled || !speechSynthesis.isSupported()) return;
+    if (!state.voiceEnabled || !speechSynthesis.isSupported()) return;
     
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === 'assistant' && !loading) {
-      setIsSpeaking(true);
+    const lastMessage = state.messages[state.messages.length - 1];
+    if (lastMessage && lastMessage.role === 'assistant' && !state.loading) {
+      dispatch({ type: ACTIONS.SET_SPEAKING, payload: true });
       
       // Remove markdown and code blocks for better speech
       const textToSpeak = lastMessage.content
@@ -207,18 +306,18 @@ export const ChatProvider = ({ children }) => {
         .replace(/>([^<]+)/g, '$1');
       
       speechSynthesis.speak(textToSpeak, {
-        onEnd: () => setIsSpeaking(false),
-        onError: () => setIsSpeaking(false)
+        onEnd: () => dispatch({ type: ACTIONS.SET_SPEAKING, payload: false }),
+        onError: () => dispatch({ type: ACTIONS.SET_SPEAKING, payload: false })
       });
     }
     
     return () => {
-      if (isSpeaking) {
+      if (state.isSpeaking) {
         speechSynthesis.stop();
-        setIsSpeaking(false);
+        dispatch({ type: ACTIONS.SET_SPEAKING, payload: false });
       }
     };
-  }, [messages, loading, voiceEnabled]);
+  }, [state.messages, state.loading, state.voiceEnabled, state.isSpeaking]);
   
   // Send message to API
   const sendMessage = useCallback(async (messageData) => {
@@ -227,10 +326,16 @@ export const ChatProvider = ({ children }) => {
     
     if (!userText.trim() && files.length === 0) return;
     
+    // Check if API key is available
+    if (!state.apiKey.trim()) {
+      dispatch({ type: ACTIONS.TOGGLE_API_KEY_MODAL, payload: true });
+      return;
+    }
+    
     // Stop any ongoing speech
-    if (isSpeaking) {
+    if (state.isSpeaking) {
       speechSynthesis.stop();
-      setIsSpeaking(false);
+      dispatch({ type: ACTIONS.SET_SPEAKING, payload: false });
     }
 
     // Create message content with file info if needed
@@ -244,121 +349,227 @@ export const ChatProvider = ({ children }) => {
       userContent += userContent ? '\n\n' : '';
       userContent += `Attached files:\n${fileList}`;
       
-      // Process files to extract content for the LLM
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        try {
-          // Create a Promise wrapper around FileReader
-          const readFileAsText = (file) => {
-            return new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = () => reject(reader.error);
-              
-              // Read file based on type
-              if (file.type.startsWith('text/') || 
-                  file.type === 'application/json' || 
-                  file.name.endsWith('.md') || 
-                  file.name.endsWith('.txt') ||
-                  file.name.endsWith('.csv')) {
-                reader.readAsText(file);
-              } else if (file.type.startsWith('image/')) {
-                // For images we could use readAsDataURL, but for simplicity
-                // just mention we can't process the image directly
-                resolve(`[This is an image file. In a production environment, we would process this using image analysis capabilities.]`);
-              } else {
-                resolve(`[File content not directly accessible. This file type (${file.type}) requires specialized processing.]`);
-              }
-            });
-          };
-          
-          // Read the file and add its content to the message
-          const content = await readFileAsText(file);
-          userContent += `\n\n--------- CONTENT OF FILE: ${file.name} ---------\n${content}\n----------- END OF FILE CONTENT -----------`;
-        } catch (error) {
-          console.error(`Error reading file ${file.name}:`, error);
-          userContent += `\n\nError reading file ${file.name}: ${error.message}`;
+      // Process files to extract content for the LLM - batching requests for better performance
+      const batchSize = 3; // Process 3 files at a time
+      const batches = [];
+      
+      // Create batches of files
+      for (let i = 0; i < files.length; i += batchSize) {
+        batches.push(files.slice(i, i + batchSize));
+      }
+      
+      // Process each batch sequentially
+      for (const batch of batches) {
+        const fileContents = await Promise.all(batch.map(async (file) => {
+          try {
+            // Create a Promise wrapper around FileReader
+            const readFileAsText = (file) => {
+              return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                
+                // Read file based on type
+                if (file.type.startsWith('text/') || 
+                    file.type === 'application/json' || 
+                    file.name.endsWith('.md') || 
+                    file.name.endsWith('.txt') ||
+                    file.name.endsWith('.csv')) {
+                  // For large files, limit reading to first megabyte
+                  if (file.size > 1024 * 1024) {
+                    reader.readAsText(file.slice(0, 1024 * 1024));
+                  } else {
+                    reader.readAsText(file);
+                  }
+                } else if (file.type.startsWith('image/')) {
+                  resolve(`[This is an image file. In a production environment, we would process this using image analysis capabilities.]`);
+                } else {
+                  resolve(`[File content not directly accessible. This file type (${file.type}) requires specialized processing.]`);
+                }
+              });
+            };
+            
+            // Read the file and return formatted content
+            const content = await readFileAsText(file);
+            return {
+              name: file.name,
+              content
+            };
+          } catch (error) {
+            console.error(`Error reading file ${file.name}:`, error);
+            return {
+              name: file.name,
+              content: `Error reading file: ${error.message}`
+            };
+          }
+        }));
+        
+        // Add all file contents to the message
+        for (const fileContent of fileContents) {
+          userContent += `\n\n--------- CONTENT OF FILE: ${fileContent.name} ---------\n${fileContent.content}\n----------- END OF FILE CONTENT -----------`;
         }
       }
     }
 
-    const newMessages = [...messages, { role: 'user', content: userContent }];
-    setMessages(newMessages);
-    setLoading(true);
+    // Add the user message to state
+    const userMessage = { role: 'user', content: userContent };
+    dispatch({ type: ACTIONS.ADD_MESSAGE, payload: userMessage });
+    dispatch({ type: ACTIONS.SET_LOADING, payload: true });
+
+    // Create a new array with all messages including the new user message
+    const newMessages = [...state.messages, userMessage];
 
     // If first message in the conversation, update title automatically
-    if (messages.filter(msg => msg.role === 'user').length === 0) {
+    if (state.messages.filter(msg => msg.role === 'user').length === 0) {
       const title = userText.length > 30 
         ? userText.substring(0, 27) + '...' 
         : userText || 'File upload';
-      setConversationTitle(title);
       
-      if (activeConversationId) {
-        conversationManager.updateTitle(activeConversationId, title);
+      dispatch({ type: ACTIONS.SET_CONVERSATION_TITLE, payload: title });
+      
+      if (state.activeConversationId) {
+        conversationManager.updateTitle(state.activeConversationId, title);
       }
     }
 
     try {
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: model,
-          messages: newMessages,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
+      if (!state.apiKey) {
+        throw new Error('No API key provided. Please enter your OpenAI API key.');
+      }
+      
+      // Define maximum retry attempts for network issues
+      const maxRetries = 2;
+      let retries = 0;
+      let response;
+      
+      while (retries <= maxRetries) {
+        try {
+          response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+              model: state.model,
+              messages: newMessages,
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${state.apiKey}`,
+                'Content-Type': 'application/json',
+              },
+              timeout: 30000, // 30 second timeout
+            }
+          );
+          break; // Success, exit retry loop
+        } catch (retryError) {
+          // Only retry on network errors or 429 (rate limit) or 5xx errors
+          if (
+            !retryError.response || 
+            retryError.code === 'ECONNABORTED' ||
+            retryError.response.status === 429 ||
+            retryError.response.status >= 500
+          ) {
+            retries++;
+            if (retries > maxRetries) throw retryError; // Re-throw if max retries reached
+            
+            // Exponential backoff with jitter
+            const delay = Math.min(1000 * (2 ** retries) + Math.random() * 1000, 10000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          } else {
+            throw retryError; // Non-retriable error, re-throw immediately
+          }
         }
-      );
+      }
 
       const reply = response.data.choices[0].message;
-      setMessages([...newMessages, reply]);
+      dispatch({ type: ACTIONS.ADD_MESSAGE, payload: reply });
     } catch (error) {
       console.error('Error calling ChatGPT:', error);
-      const errorMessage = error.response?.data?.error?.message || 
-                          'Sorry, there was an error processing your request. Please try again later.';
       
-      setMessages([
-        ...newMessages,
-        {
+      let errorMessage;
+      let errorType = 'UNKNOWN';
+      
+      // Handle different error types
+      if (!error.response) {
+        // Network error
+        errorType = 'NETWORK';
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.response.status === 401) {
+        // Authentication error - Invalid API key
+        errorType = 'AUTH';
+        errorMessage = 'Invalid API key. Please check your API key and try again.';
+        // Show API key modal on next render
+        setTimeout(() => dispatch({ type: ACTIONS.TOGGLE_API_KEY_MODAL, payload: true }), 0);
+      } else if (error.response.status === 429) {
+        // Rate limit error
+        errorType = 'RATE_LIMIT';
+        errorMessage = 'Rate limit exceeded. Please wait a moment before trying again.';
+      } else if (error.response.status >= 500) {
+        // Server error
+        errorType = 'SERVER';
+        errorMessage = 'OpenAI server error. Please try again later.';
+      } else if (error.message === 'No API key provided. Please enter your OpenAI API key.') {
+        // Missing API key
+        errorType = 'NO_API_KEY';
+        errorMessage = error.message;
+      } else {
+        // Other errors (parse the error message from OpenAI if available)
+        errorType = 'API';
+        errorMessage = error.response?.data?.error?.message || 
+                       'Sorry, there was an error processing your request. Please try again later.';
+      }
+      
+      dispatch({ 
+        type: ACTIONS.ADD_MESSAGE, 
+        payload: {
           role: 'assistant',
-          content: `⚠️ Error: ${errorMessage}`
+          content: `⚠️ Error: ${errorMessage}`,
+          error: true,
+          errorType
         }
-      ]);
+      });
     }
 
-    setLoading(false);
-  }, [messages, model, activeConversationId, isSpeaking]);
+    dispatch({ type: ACTIONS.SET_LOADING, payload: false });
+  }, [state.messages, state.model, state.activeConversationId, state.isSpeaking, state.apiKey]);
   
   // Handle API key submission
   const handleApiKeySubmit = useCallback((e) => {
     e.preventDefault();
-    if (apiKey.trim() && apiKey.startsWith('sk-')) {
-      localStorage.setItem('openai_api_key', apiKey);
-      setShowApiKeyModal(false);
+    if (state.apiKey.trim() && state.apiKey.startsWith('sk-')) {
+      // Store API key in localStorage (client-side only)
+      // Note: In production, consider a more secure approach using a backend
+      localStorage.setItem('openai_api_key', state.apiKey);
+      dispatch({ type: ACTIONS.TOGGLE_API_KEY_MODAL, payload: false });
     }
-  }, [apiKey]);
+  }, [state.apiKey]);
+  
+  // Voice input handler - defined after sendMessage to avoid 'used before defined' warning
+  const handleVoiceInput = useCallback((transcript) => {
+    if (transcript) {
+      if (typeof transcript === 'string') {
+        sendMessage({ text: transcript, files: [] });
+      }
+      dispatch({ type: ACTIONS.SET_LISTENING, payload: false });
+    }
+  }, [sendMessage]);
   
   // Clear current conversation
   const clearConversation = useCallback(() => {
     // Keep the system message, clear everything else
-    const systemMsg = messages.find(msg => msg.role === 'system') || 
-                     { role: 'system', content: systemPrompt };
+    const systemMsg = state.messages.find(msg => msg.role === 'system') || 
+                      { role: 'system', content: state.systemPrompt };
     
-    setMessages([systemMsg]);
+    dispatch({ type: ACTIONS.SET_MESSAGES, payload: [systemMsg] });
     createNewConversation();
-  }, [messages, systemPrompt, createNewConversation]);
+  }, [state.messages, state.systemPrompt, createNewConversation]);
   
   // Export current conversation
   const exportConversation = useCallback(() => {
-    const conversationText = messages
+    const conversationText = state.messages
       .filter(msg => msg.role !== 'system')
       .map(msg => `${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content}`)
       .join('\n\n');
     
-    const fileName = conversationTitle.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    const fileName = state.conversationTitle.replace(/[^a-z0-9]/gi, '-').toLowerCase();
     const blob = new Blob([conversationText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -368,27 +579,52 @@ export const ChatProvider = ({ children }) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [messages, conversationTitle]);
+  }, [state.messages, state.conversationTitle]);
   
   // Toggle voice features
   const toggleVoiceFeatures = useCallback(() => {
-    if (!voiceEnabled && !speechSynthesis.isSupported()) {
+    if (!state.voiceEnabled && !speechSynthesis.isSupported()) {
       alert('Speech synthesis is not supported in your browser.');
       return;
     }
     
-    setVoiceEnabled(!voiceEnabled);
-  }, [voiceEnabled]);
+    dispatch({ type: ACTIONS.TOGGLE_VOICE_ENABLED, payload: !state.voiceEnabled });
+  }, [state.voiceEnabled]);
+
+  // Action dispatchers for components
+  const setApiKey = useCallback((value) => {
+    dispatch({ type: ACTIONS.SET_API_KEY, payload: value });
+  }, []);
+
+  const setShowApiKeyModal = useCallback((value) => {
+    dispatch({ type: ACTIONS.TOGGLE_API_KEY_MODAL, payload: value });
+  }, []);
+
+  const setModel = useCallback((value) => {
+    dispatch({ type: ACTIONS.SET_MODEL, payload: value });
+  }, []);
+
+  const setShowConversationList = useCallback((value) => {
+    dispatch({ type: ACTIONS.SET_CONVERSATION_LIST_VISIBILITY, payload: value });
+  }, []);
+
+  const setShowSystemPromptEditor = useCallback((value) => {
+    dispatch({ type: ACTIONS.TOGGLE_SYSTEM_PROMPT_EDITOR, payload: value });
+  }, []);
+
+  const setIsListening = useCallback((value) => {
+    dispatch({ type: ACTIONS.SET_LISTENING, payload: value });
+  }, []);
 
   return (
     <ChatContext.Provider
       value={{
         // Core state
-        messages,
-        loading,
-        apiKey,
-        showApiKeyModal,
-        model,
+        messages: state.messages,
+        loading: state.loading,
+        apiKey: state.apiKey,
+        showApiKeyModal: state.showApiKeyModal,
+        model: state.model,
         setApiKey,
         setShowApiKeyModal,
         sendMessage,
@@ -396,32 +632,32 @@ export const ChatProvider = ({ children }) => {
         setModel,
         
         // Conversation management
-        conversations,
-        activeConversationId,
-        showConversationList,
+        conversations: state.conversations,
+        activeConversationId: state.activeConversationId,
+        showConversationList: state.showConversationList,
         setShowConversationList,
         loadConversation,
         createNewConversation,
         deleteConversation,
         
         // Conversation details
-        conversationTitle,
+        conversationTitle: state.conversationTitle,
         updateConversationTitle,
         clearConversation,
         exportConversation,
         
         // System prompt
-        systemPrompt,
-        showSystemPromptEditor, 
+        systemPrompt: state.systemPrompt,
+        showSystemPromptEditor: state.showSystemPromptEditor, 
         setShowSystemPromptEditor,
         updateSystemPrompt,
         
         // Voice features
-        isListening,
+        isListening: state.isListening,
         setIsListening,
         handleVoiceInput,
-        isSpeaking,
-        voiceEnabled,
+        isSpeaking: state.isSpeaking,
+        voiceEnabled: state.voiceEnabled,
         toggleVoiceFeatures
       }}
     >

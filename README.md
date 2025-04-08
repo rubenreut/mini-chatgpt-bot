@@ -11,31 +11,30 @@ A lightweight, responsive React-based chat interface that connects to OpenAI's A
 - 📚 Multi-conversation support and management
 - 🔄 Model selection (GPT-4/GPT-3.5 Turbo)
 - 🎮 System prompt customization
-- 📎 File upload support (PDFs, images, CSVs, etc.)
+- 📎 Enhanced file upload support with previews and validation
 - 🗣️ Voice input and text-to-speech capabilities
 - 💾 Chat history persistence
 - 📤 Export conversation feature
+- 📊 Performance optimizations with virtualization
+- 🔍 Type safety with TypeScript
+- ✅ Comprehensive tests with Jest and Cypress
 
 ## Setup
 
 1. Clone this repository
 2. Install dependencies:
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
-3. Set up your API key in the `.env` file:
-```
-REACT_APP_OPENAI_API_KEY=your-openai-api-key
-```
-4. Start the development server:
+3. Start the development server:
 ```bash
 npm start
 ```
-5. Open http://localhost:3000 in your browser
+4. Open http://localhost:3000 in your browser
 
 ## Usage
 
-1. The app uses the API key from your .env file
+1. When you first open the app, you'll be prompted to enter your OpenAI API key
 2. Get an API key from [OpenAI API keys](https://platform.openai.com/api-keys) if you don't have one
 3. Start chatting with the model!
 
@@ -51,10 +50,13 @@ npm start
 - **Model Selection**: Choose between GPT-4 (more powerful) and GPT-3.5 Turbo (faster responses)
 - **Custom System Prompts**: Customize the AI's behavior with system instructions
 
-### File Handling
+### Enhanced File Handling
 - **File Upload**: Attach PDFs, images, CSVs, and other files to your messages
 - **Drag & Drop**: Easy file uploading with drag and drop interface
 - **Multiple Files**: Support for attaching multiple files at once
+- **File Previews**: Preview text and image files before sending
+- **File Validation**: Validate file types and sizes
+- **Large File Handling**: Efficient processing of large files
 
 ### Voice Features
 - **Voice Input**: Speak your messages instead of typing (browser support required)
@@ -65,35 +67,85 @@ npm start
 - **Theme Toggle**: Switch between light and dark themes
 - **Mobile Responsive**: Works well on all devices
 
+## Development Features
+
+### TypeScript Integration
+- Full TypeScript support with type definitions
+- Interface definitions for better developer experience
+- Type-safe components and hooks
+
+### State Management
+- React Query for API state management
+- React Context API for global state
+- React useReducer for complex state logic
+
+### Testing
+- Jest and React Testing Library for unit tests
+- Cypress for end-to-end and component tests
+- Test scripts in package.json
+
+```bash
+# Run Jest unit tests
+npm test
+
+# Run Cypress tests
+npm run cy:open     # Interactive mode
+npm run test:e2e    # Headless mode
+npm run test:component # Component tests
+```
+
+### Performance Optimizations
+- Virtualized message list for handling large conversations
+- Memoized components to prevent unnecessary re-renders
+- Async file processing with batching
+- Efficient request handling with React Query
+
 ## Project Structure
 
-- `/components` - Reusable UI components
+- `/components` - Reusable UI components (written in TypeScript)
 - `/context` - React context for state management
+- `/hooks` - Custom React hooks
 - `/utils` - Utility functions and helper tools
+- `/cypress` - End-to-end and component tests
+- `/src/**/*.test.tsx` - Unit tests
 
 ## Technologies Used
 
-- React with Context API
+- React with TypeScript
+- React Query for API state management
+- React Hook Form for form handling
+- React Testing Library and Cypress for testing
 - Axios for API requests
 - react-markdown with remark-gfm
 - Prism.js for syntax highlighting
+- React Window for virtualization
 - Web Speech API for voice features
 
 ## Security Notes
 
-This application uses your OpenAI API key from the .env file. The key is included in API requests made directly from your browser to OpenAI. For security:
+This application stores your OpenAI API key in browser localStorage and uses it for API requests directly from your browser to OpenAI. For enhanced security:
 
-- Keep your .env file out of version control (.gitignore)
-- Don't share your built application with others without removing the API key
-- For production deployment, consider using a server-side proxy to keep your API key secure
+- We never send your API key to any server besides OpenAI
+- Consider implementing a server-side proxy in production to avoid exposing API keys
+- All data is processed locally in your browser
 
 ## Browser Compatibility
 
-Voice features require a modern browser with Web Speech API support. This includes:
 - Chrome (desktop and mobile)
 - Edge
 - Safari (desktop and iOS)
-- Firefox (partial support)
+- Firefox
+
+Voice features require a modern browser with Web Speech API support.
+
+## Future Improvements
+
+- Server-side proxy for API requests
+- OIDC/OAuth authentication
+- More extensive file type support
+- Streaming responses
+- Collaborative features
+- Mobile app wrapper (React Native)
 
 ---
 

@@ -15,7 +15,9 @@ import "prismjs/components/prism-sql";
 
 import MessageList from "./components/MessageList";
 import ChatInput from "./components/ChatInput";
-import ApiKeyModal from "./components/ApiKeyModal";
+// ApiKeyModal is not used in this file
+// If needed in the future, uncomment the next line
+// import ApiKeyModal from "./components/ApiKeyModal";
 import Header from "./components/Header";
 import SystemPromptEditor from "./components/SystemPromptEditor";
 import ConversationTitle from "./components/ConversationTitle";
@@ -24,16 +26,12 @@ import { useChatContext } from "./context/ChatContext";
 import { useThemeContext } from "./context/ThemeContext";
 
 function App() {
+  // eslint-disable-next-line no-unused-vars
   const {
     messages,
     loading,
-    apiKey,
-    showApiKeyModal,
     model,
-    setApiKey,
-    setShowApiKeyModal,
     sendMessage,
-    handleApiKeySubmit,
     setModel,
     clearConversation,
     exportConversation,

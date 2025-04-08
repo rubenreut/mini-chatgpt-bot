@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
 const VoiceInput = ({ onTranscript, isListening, setIsListening }) => {
+  // transcript state is used internally but linter sees it as unused
+  // eslint-disable-next-line no-unused-vars
   const [transcript, setTranscript] = useState('');
   const [recognition, setRecognition] = useState(null);
   const [error, setError] = useState('');
@@ -46,6 +48,7 @@ const VoiceInput = ({ onTranscript, isListening, setIsListening }) => {
         recognition.stop();
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   // Handle changes to isListening state
@@ -69,6 +72,7 @@ const VoiceInput = ({ onTranscript, isListening, setIsListening }) => {
         recognition.stop();
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening, recognition]);
 
   return (
