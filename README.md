@@ -1,70 +1,100 @@
-# Getting Started with Create React App
+# Mini ChatGPT Bot
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A lightweight, responsive React-based chat interface that connects to OpenAI's API for a ChatGPT-like experience right in your browser.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- 💬 Simple, clean chat interface with dark/light mode
+- 🔐 Client-side API key storage (your key never leaves your device)
+- 📝 Markdown and code syntax highlighting
+- 📱 Mobile-friendly responsive design
+- 📚 Multi-conversation support and management
+- 🔄 Model selection (GPT-4/GPT-3.5 Turbo)
+- 🎮 System prompt customization
+- 📎 File upload support (PDFs, images, CSVs, etc.)
+- 🗣️ Voice input and text-to-speech capabilities
+- 💾 Chat history persistence
+- 📤 Export conversation feature
 
-### `npm start`
+## Setup
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. Clone this repository
+2. Install dependencies:
+```bash
+npm install
+```
+3. Set up your API key in the `.env` file:
+```
+REACT_APP_OPENAI_API_KEY=your-openai-api-key
+```
+4. Start the development server:
+```bash
+npm start
+```
+5. Open http://localhost:3000 in your browser
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Usage
 
-### `npm test`
+1. The app uses the API key from your .env file
+2. Get an API key from [OpenAI API keys](https://platform.openai.com/api-keys) if you don't have one
+3. Start chatting with the model!
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Advanced Features
 
-### `npm run build`
+### Conversation Management
+- **Multiple Conversations**: Maintain separate chat threads for different topics
+- **Conversation History**: All chats are saved in browser storage
+- **Editable Titles**: Rename conversations for better organization
+- **Export**: Save your conversation as a text file
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Model & System Prompt
+- **Model Selection**: Choose between GPT-4 (more powerful) and GPT-3.5 Turbo (faster responses)
+- **Custom System Prompts**: Customize the AI's behavior with system instructions
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### File Handling
+- **File Upload**: Attach PDFs, images, CSVs, and other files to your messages
+- **Drag & Drop**: Easy file uploading with drag and drop interface
+- **Multiple Files**: Support for attaching multiple files at once
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Voice Features
+- **Voice Input**: Speak your messages instead of typing (browser support required)
+- **Text-to-Speech**: Have the AI read responses aloud
+- **Voice Toggle**: Easily enable/disable voice features
 
-### `npm run eject`
+### UI Customization
+- **Theme Toggle**: Switch between light and dark themes
+- **Mobile Responsive**: Works well on all devices
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Project Structure
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- `/components` - Reusable UI components
+- `/context` - React context for state management
+- `/utils` - Utility functions and helper tools
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Technologies Used
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- React with Context API
+- Axios for API requests
+- react-markdown with remark-gfm
+- Prism.js for syntax highlighting
+- Web Speech API for voice features
 
-## Learn More
+## Security Notes
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+This application uses your OpenAI API key from the .env file. The key is included in API requests made directly from your browser to OpenAI. For security:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Keep your .env file out of version control (.gitignore)
+- Don't share your built application with others without removing the API key
+- For production deployment, consider using a server-side proxy to keep your API key secure
 
-### Code Splitting
+## Browser Compatibility
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Voice features require a modern browser with Web Speech API support. This includes:
+- Chrome (desktop and mobile)
+- Edge
+- Safari (desktop and iOS)
+- Firefox (partial support)
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+For any questions or issues, please open an issue in this repository.

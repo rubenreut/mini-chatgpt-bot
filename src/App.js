@@ -1,68 +1,135 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useEffect } from "react";
+import "./App.css";
+// Import Prism core first before any components
+import Prism from "prismjs";
+// Then import the theme
+import "prismjs/themes/prism-tomorrow.css";
+// Then import components
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-jsx";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-sql";
+
+import MessageList from "./components/MessageList";
+import ChatInput from "./components/ChatInput";
+import ApiKeyModal from "./components/ApiKeyModal";
+import Header from "./components/Header";
+import SystemPromptEditor from "./components/SystemPromptEditor";
+import ConversationTitle from "./components/ConversationTitle";
+import ConversationList from "./components/ConversationList";
+import { useChatContext } from "./context/ChatContext";
+import { useThemeContext } from "./context/ThemeContext";
 
 function App() {
-  const [messages, setMessages] = useState([
-    { role: "system", content: "You are a helpful assistant." }
-  ]);
-  const [userInput, setUserInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const {
+    messages,
+    loading,
+    apiKey,
+    showApiKeyModal,
+    model,
+    setApiKey,
+    setShowApiKeyModal,
+    sendMessage,
+    handleApiKeySubmit,
+    setModel,
+    clearConversation,
+    exportConversation,
+    // Conversation management
+    conversations,
+    activeConversationId,
+    showConversationList,
+    setShowConversationList,
+    loadConversation,
+    createNewConversation,
+    deleteConversation,
+    conversationTitle,
+    updateConversationTitle,
+    // System prompt
+    systemPrompt,
+    showSystemPromptEditor,
+    setShowSystemPromptEditor,
+    updateSystemPrompt
+  } = useChatContext();
 
-  const sendMessage = async () => {
-    if (!userInput.trim()) return;
+  const { darkMode, toggleDarkMode } = useThemeContext();
 
-    const newMessages = [...messages, { role: "user", content: userInput }];
-    setMessages(newMessages);
-    setUserInput("");
-    setLoading(true);
+  useEffect(() => {
+    Prism.highlightAll();
+  }, [messages]);
 
-    try {
-      const response = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          model: "gpt-4",
-          messages: newMessages,
-        },
-        {
-          headers: {
-            "Authorization": `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const reply = response.data.choices[0].message;
-      setMessages([...newMessages, reply]);
-    } catch (error) {
-      console.error("Error calling ChatGPT:", error);
-    }
-
-    setLoading(false);
+  // Toggle conversation list sidebar
+  const toggleConversationList = () => {
+    setShowConversationList(prev => !prev);
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 600, margin: "0 auto" }}>
-      <h1>Mini ChatGPT Bot</h1>
-      <div style={{ marginBottom: 12 }}>
-        {messages
-          .filter((msg) => msg.role !== "system")
-          .map((msg, i) => (
-            <div key={i} style={{ marginBottom: 8 }}>
-              <strong>{msg.role === "user" ? "You" : "GPT"}:</strong>{" "}
-              {msg.content}
-            </div>
-          ))}
+    <div className={`app-container ${showConversationList ? 'with-sidebar' : ''}`}>
+      {showConversationList && (
+        <aside className="conversation-sidebar">
+          <div className="sidebar-header">
+            <h2>Conversations</h2>
+            <button 
+              className="close-sidebar" 
+              onClick={toggleConversationList}
+              aria-label="Close conversation list"
+            >
+              ×
+            </button>
+          </div>
+          <button 
+            className="new-chat-button" 
+            onClick={createNewConversation}
+          >
+            <span className="plus-icon">+</span> New Chat
+          </button>
+          <ConversationList 
+            conversations={conversations}
+            activeId={activeConversationId}
+            onSelect={(id) => {
+              loadConversation(id);
+              setShowConversationList(false);
+            }}
+            onDelete={deleteConversation}
+          />
+        </aside>
+      )}
+      
+      <div className="chat-container">
+        <Header
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
+          selectedModel={model}
+          onModelChange={setModel}
+          onClearConversation={clearConversation}
+          onExportConversation={exportConversation}
+          onToggleConversations={toggleConversationList}
+          showingConversations={showConversationList}
+        />
+        
+        <ConversationTitle 
+          title={conversationTitle}
+          onTitleChange={updateConversationTitle}
+          onNewConversation={createNewConversation}
+        />
+        
+        <MessageList messages={messages} />
+        
+        <ChatInput 
+          onSendMessage={sendMessage} 
+          loading={loading} 
+        />
+        
+        {showSystemPromptEditor && (
+          <SystemPromptEditor 
+            systemPrompt={systemPrompt}
+            onSave={updateSystemPrompt}
+            onCancel={() => setShowSystemPromptEditor(false)}
+          />
+        )}
       </div>
-      <textarea
-        rows={3}
-        value={userInput}
-        onChange={(e) => setUserInput(e.target.value)}
-        placeholder="Type your message here..."
-        style={{ width: "100%", marginBottom: 8 }}
-      />
-      <button onClick={sendMessage} disabled={loading}>
-        {loading ? "Thinking..." : "Send"}
-      </button>
     </div>
   );
 }
